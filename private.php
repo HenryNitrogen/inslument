@@ -238,8 +238,13 @@ if ($selectedConversation !== "") {
         </div>
         <nav>
             <ul>
-                <li><a href="chat.php">私信</a></li>
-                <li><a href="calculator.php">科学计算器</a></li>
+                <?php foreach ($applications as $app): ?>
+                    <li>
+                        <a href="<?= htmlspecialchars($app['link']) ?>">
+                            <?= htmlspecialchars($app['NAME']) ?>
+                        </a>
+                    </li>
+                <?php endforeach; ?>
             </ul>
         </nav>
         <div>
