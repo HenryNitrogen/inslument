@@ -9,6 +9,22 @@ if (!isset($_SESSION['user']) || $_SESSION['user'] === '') {
     header("Location: login.php");
     exit();
 }
+
+// 建立数据库连接（请根据你的数据库信息修改配置）
+$dsn = "mysql:host=localhost;dbname=yourdbname;charset=utf8mb4";
+$username = "yourusername";
+$password = "yourpassword";
+$options = [PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION];
+
+try {
+    $pdo = new PDO($dsn, $username, $password, $options);
+} catch (PDOException $e) {
+    die("数据库连接失败：" . $e->getMessage());
+}
+
+// 从数据库获取应用信息
+$stmt = $pdo->query("SELECT * FROM applications");
+$applications = $stmt->fetchAll(PDO::FETCH_ASSOC);
 ?>
 <!DOCTYPE html>
 <html lang="en">
@@ -43,9 +59,6 @@ if (!isset($_SESSION['user']) || $_SESSION['user'] === '') {
             text-decoration: none;
             font-weight: 500;
         }
-        .navbar a:hover {
-            text-decoration: underline;
-        }
         .logout-btn {
             background-color: #FF3B30;
             border: none;
@@ -53,9 +66,6 @@ if (!isset($_SESSION['user']) || $_SESSION['user'] === '') {
             padding: 0.5rem 1rem;
             cursor: pointer;
             font-weight: bold;
-        }
-        .logout-btn:hover {
-            background-color: #E02E20;
         }
         .container {
             padding: 2rem;
@@ -71,16 +81,11 @@ if (!isset($_SESSION['user']) || $_SESSION['user'] === '') {
         .app-card:hover {
             transform: scale(1.02);
         }
-        .app-card h3 {
-            margin: 0 0 0.5rem 0;
-        }
     </style>
 </head>
 <body>
     <header class="navbar">
-        <div class="logo">
-            <a href="app.php">应用选择</a>
-        </div>
+        <div class="logo"><a href="app.php">应用选择</a></div>
         <nav>
             <ul>
                 <li><a href="chat.php">聊天</a></li>
@@ -91,20 +96,16 @@ if (!isset($_SESSION['user']) || $_SESSION['user'] === '') {
             <button class="logout-btn" onclick="location.href='app.php?action=logout'">退出登录</button>
         </div>
     </header>
-
     <div class="container">
         <h2>欢迎, <?= htmlspecialchars($_SESSION['user']) ?></h2>
         <p>请选择您要使用的应用：</p>
-        <div class="app-card">
-            <h3>聊天</h3>
-            <p>进入聊天页面，与其他用户实时交流。</p>
-            <a href="chat.php">进入聊天</a>
-        </div>
-        <div class="app-card">
-            <h3>计算器</h3>
-            <p>使用简单的计算器进行运算。</p>
-            <a href="calculator.php">进入计算器</a>
-        </div>
+        <?php foreach ($applications as $app): ?>
+            <div class="app-card">
+                <h3><?= htmlspecialchars($app['name']) ?></h3>
+                <p><?= htmlspecialchars($app['description']) ?></p>
+                <a href="<?= htmlspecialchars($app['link']) ?>">进入<?= htmlspecialchars($app['name']) ?></a>
+            </div>
+        <?php endforeach; ?>
     </div>
 </body>
 </html>
