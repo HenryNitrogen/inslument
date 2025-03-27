@@ -58,10 +58,22 @@ $messages = $stmt->fetchAll();
             justify-content: space-between;
             align-items: center;
         }
+        .navbar ul {
+            margin: 0;
+            padding: 0;
+            list-style: none;
+            display: flex;
+        }
+        .navbar li {
+            margin-right: 1rem;
+        }
         .navbar a {
             color: #fff;
             text-decoration: none;
-            margin-left: 1rem;
+            font-weight: 500;
+        }
+        .navbar a:hover {
+            text-decoration: underline;
         }
         .container {
             max-width: 800px;
