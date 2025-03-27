@@ -76,9 +76,7 @@ $messages = $stmt->fetchAll();
             text-decoration: underline;
         }
         .container {
-            max-width: 800px;
-            margin: 2rem auto;
-            padding: 1rem;
+            padding: 2rem;
         }
         .chat-box {
             border: 1px solid #ccc;
