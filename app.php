@@ -1,13 +1,10 @@
 <?php
 session_start();
-
-// 处理退出登录请求
 if (isset($_GET['action']) && $_GET['action'] === 'logout') {
     session_destroy();
     header("Location: login.php");
     exit();
 }
-
 if (!isset($_SESSION['user']) || $_SESSION['user'] === '') {
     header("Location: login.php");
     exit();
@@ -24,7 +21,6 @@ if (!isset($_SESSION['user']) || $_SESSION['user'] === '') {
             font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
             background-color: #F5F5F5;
         }
-        /* 导航栏样式 */
         .navbar {
             background-color: #007AFF;
             color: #fff;
@@ -50,7 +46,6 @@ if (!isset($_SESSION['user']) || $_SESSION['user'] === '') {
         .navbar a:hover {
             text-decoration: underline;
         }
-        /* 主体内容区域 */
         .container {
             padding: 2rem;
         }
@@ -84,24 +79,23 @@ if (!isset($_SESSION['user']) || $_SESSION['user'] === '') {
 <body>
     <header class="navbar">
         <div class="logo">
-            <a href="home.php">应用选择</a>
+            <a href="app.php">应用选择</a>
         </div>
         <nav>
             <ul>
                 <li><a href="app1.php">应用1</a></li>
                 <li><a href="app2.php">应用2</a></li>
-                <li><a href="app3.php">应用3</a></li>
+                <li><a href="chat.php">聊天</a></li>
             </ul>
         </nav>
         <div>
-            <button class="logout-btn" onclick="location.href='home.php?action=logout'">退出登录</button>
+            <button class="logout-btn" onclick="location.href='app.php?action=logout'">退出登录</button>
         </div>
     </header>
 
     <div class="container">
         <h2>欢迎, <?= htmlspecialchars($_SESSION['user']) ?></h2>
         <p>请选择您要使用的应用：</p>
-        <!-- 示例应用卡片 -->
         <div class="app-card">
             <h3>应用1</h3>
             <p>这是应用1的简介。</p>
@@ -113,9 +107,9 @@ if (!isset($_SESSION['user']) || $_SESSION['user'] === '') {
             <a href="app2.php">进入应用2</a>
         </div>
         <div class="app-card">
-            <h3>应用3</h3>
-            <p>这是应用3的简介。</p>
-            <a href="app3.php">进入应用3</a>
+            <h3>聊天</h3>
+            <p>进入聊天页面，与其他用户实时交流。</p>
+            <a href="chat.php">进入聊天</a>
         </div>
     </div>
 </body>

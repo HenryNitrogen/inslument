@@ -1,6 +1,6 @@
 <?php
 session_start();
-if (!isset($_SESSION['user']) || $_SESSION['user'] === '') {
+if (!isset($_SESSION["user"]) || $_SESSION["user"] === "") {
     header("Location: login.php");
     exit();
 }
@@ -19,14 +19,14 @@ $options = [
 ];
 try {
     $pdo = new PDO($dsn, $user, $pass, $options);
-} catch (\PDOException $e) {
+} catch (PDOException $e) {
     die("Database connection failed: " . $e->getMessage());
 }
 
-// 处理提交的新消息
+// 提交新消息
 if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["message"])) {
     $user_name = $_SESSION["user"];
-    $message = trim($_POST["message"]);
+    $message   = trim($_POST["message"]);
     if ($message !== "") {
         $stmt = $pdo->prepare("INSERT INTO chat_messages (user_name, message) VALUES (?, ?)");
         $stmt->execute([$user_name, $message]);
@@ -35,7 +35,7 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["message"])) {
     exit();
 }
 
-// 获取所有消息记录
+// 读取消息记录
 $stmt = $pdo->query("SELECT * FROM chat_messages ORDER BY created_at ASC");
 $messages = $stmt->fetchAll();
 ?>
@@ -49,6 +49,17 @@ $messages = $stmt->fetchAll();
             font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
             background-color: #F5F5F5;
             padding: 20px;
+        }
+        .nav {
+            margin-bottom: 20px;
+        }
+        .nav a {
+            color: #007AFF;
+            text-decoration: none;
+            margin-right: 15px;
+        }
+        .nav a:hover {
+            text-decoration: underline;
         }
         .chat-header {
             font-size: 1.5em;
@@ -94,24 +105,13 @@ $messages = $stmt->fetchAll();
         form input[type="submit"]:hover {
             background-color: #005BB5;
         }
-        .nav {
-            margin-bottom: 20px;
-        }
-        .nav a {
-            color: #007AFF;
-            text-decoration: none;
-            margin-right: 15px;
-        }
-        .nav a:hover {
-            text-decoration: underline;
-        }
     </style>
 </head>
 <body>
     <div class="nav">
-        <a href="home.php">首页</a>
+        <a href="app.php">首页</a>
         <a href="chat.php">聊天</a>
-        <a href="home.php?action=logout">退出登录</a>
+        <a href="app.php?action=logout">退出登录</a>
     </div>
     <div class="chat-header">
         Chat Room - Logged in as <?= htmlspecialchars($_SESSION["user"]) ?>
