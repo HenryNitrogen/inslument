@@ -20,6 +20,9 @@ $options = [
 ];
 try {
     $pdo = new PDO($dsn, $user, $pass, $options);
+    // 动态生成导航栏数据
+    $stmt = $pdo->query("SELECT * FROM applications ORDER BY id");
+    $applications = $stmt->fetchAll();
 } catch (PDOException $e) {
     die("Database connection failed: " . $e->getMessage());
 }
@@ -92,17 +95,16 @@ if ($selectedConversation !== "") {
 }
 ?>
 <!DOCTYPE html>
-<html lang="en">
+<html lang="zh">
 <head>
     <meta charset="UTF-8">
-    <title>私信</title>
+    <title>私信页面</title>
     <style>
         body {
             margin: 0;
-            background-color: #F5F5F5;
             font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            background-color: #F5F5F5;
         }
-        /* 顶部导航栏 */
         .navbar {
             background-color: #007AFF;
             color: #fff;
@@ -112,18 +114,22 @@ if ($selectedConversation !== "") {
             align-items: center;
         }
         .navbar ul {
-            list-style: none;
             margin: 0;
             padding: 0;
+            list-style: none;
             display: flex;
         }
-        .navbar li { margin-right: 1rem; }
+        .navbar li {
+            margin-right: 1rem;
+        }
         .navbar a {
             color: #fff;
             text-decoration: none;
             font-weight: 500;
         }
-        .navbar a:hover { text-decoration: underline; }
+        .navbar a:hover {
+            text-decoration: underline;
+        }
         .logout-btn {
             background-color: #FF3B30;
             border: none;
@@ -131,109 +137,40 @@ if ($selectedConversation !== "") {
             padding: 0.5rem 1rem;
             cursor: pointer;
             font-weight: bold;
+            color: #fff;
         }
-        .logout-btn:hover { background-color: #E02E20; }
-        /* 私信主区域 */
+        .logout-btn:hover {
+            background-color: #E02E20;
+        }
         .container {
-            padding: 1rem 2rem;
+            padding: 2rem;
         }
         .private-container {
             display: flex;
-            background-color: #fff;
-            border-radius: 8px;
-            overflow: hidden;
-            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
-            height: 80vh;
         }
-        /* 左侧用户列表 */
         .sidebar {
-            width: 30%;
-            border-right: 1px solid #ddd;
-            overflow-y: auto;
+            width: 200px;
+            background-color: #fff;
             padding: 1rem;
+            border-radius: 8px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+            margin-right: 1rem;
         }
-        .sidebar input[type="text"] {
-            width: 100%;
-            padding: 0.5rem;
-            margin-bottom: 1rem;
-            border: 1px solid #ccc;
-            border-radius: 5px;
+        .chat-area {
+            flex: 1;
+            background-color: #fff;
+            padding: 1rem;
+            border-radius: 8px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
         }
         .user-item {
             padding: 0.5rem;
-            border-bottom: 1px solid #eee;
             cursor: pointer;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-        }
-        .user-item:hover { background-color: #f0f0f0; }
-        .unread-badge {
-            background-color: #FF3B30;
-            color: #fff;
-            border-radius: 50%;
-            padding: 0 6px;
-            font-size: 0.8rem;
-        }
-        /* 右侧对话区域 */
-        .chat-area {
-            width: 70%;
-            display: flex;
-            flex-direction: column;
-        }
-        .chat-header {
-            padding: 1rem;
             border-bottom: 1px solid #ddd;
-            font-size: 1.2rem;
-            font-weight: bold;
         }
-        .chat-history {
-            flex: 1;
-            padding: 1rem;
-            overflow-y: auto;
-            background-color: #fafafa;
+        .user-item:hover {
+            background-color: #f0f0f0;
         }
-        .chat-message {
-            margin-bottom: 1rem;
-            display: flex;
-        }
-        .chat-message.sent { justify-content: flex-end; }
-        .chat-message.received { justify-content: flex-start; }
-        .chat-bubble {
-            max-width: 70%;
-            padding: 0.5rem 1rem;
-            border-radius: 15px;
-            background-color: #d9fdd3;
-            position: relative;
-        }
-        .chat-message.sent .chat-bubble { background-color: #cce5ff; }
-        .chat-timestamp {
-            font-size: 0.75rem;
-            color: #999;
-            margin-top: 5px;
-            text-align: right;
-        }
-        .chat-input {
-            border-top: 1px solid #ddd;
-            padding: 0.5rem;
-        }
-        .chat-input form { display: flex; }
-        .chat-input input[type="text"] {
-            flex: 1;
-            padding: 0.5rem;
-            border: 1px solid #ccc;
-            border-radius: 5px;
-        }
-        .chat-input input[type="submit"] {
-            background-color: #007AFF;
-            color: #fff;
-            border: none;
-            padding: 0 1rem;
-            margin-left: 0.5rem;
-            border-radius: 5px;
-            cursor: pointer;
-        }
-        .chat-input input[type="submit"]:hover { background-color: #005BB5; }
     </style>
 </head>
 <body>
@@ -243,8 +180,13 @@ if ($selectedConversation !== "") {
         </div>
         <nav>
             <ul>
-                <li><a href="chat.php">私信</a></li>
-                <li><a href="calculator.php">科学计算器</a></li>
+                <?php foreach ($applications as $app): ?>
+                    <li>
+                        <a href="<?= htmlspecialchars($app['link']) ?>">
+                            <?= htmlspecialchars($app['NAME']) ?>
+                        </a>
+                    </li>
+                <?php endforeach; ?>
             </ul>
         </nav>
         <div>
@@ -258,14 +200,12 @@ if ($selectedConversation !== "") {
                 <form method="get" action="private.php">
                     <input type="text" name="search" placeholder="搜索用户" value="<?= htmlspecialchars($search) ?>">
                 </form>
-                <?php foreach ($conversationList as $conv): ?>
-                    <?php 
-                        $uname = $conv["user_name"];
-                        $unread = $conv["unread"];
-                        // 如果当前对话选中，则标记样式
-                        $active = ($selectedConversation === $uname) ? "style='background-color:#e0e0e0;'" : "";
-                    ?>
-                    <div class="user-item" onclick="window.location.href='private.php?conversation=<?= urlencode($uname) ?><?= $search ? '&search=' . urlencode($search) : '' ?>'" <?= $active ?>>
+                <?php foreach ($conversationList as $conv): 
+                    $uname = $conv["user_name"];
+                    $unread = $conv["unread"];
+                    $active = ($selectedConversation === $uname) ? "style='background-color:#e0e0e0;'" : "";
+                ?>
+                    <div class="user-item" onclick="window.location.href='private.php?conversation=<?= urlencode($uname) ?>'" <?= $active ?>>
                         <span><?= htmlspecialchars($uname) ?></span>
                         <?php if ($unread > 0): ?>
                             <span class="unread-badge"><?= $unread ?></span>
