@@ -115,7 +115,7 @@ try {
         <nav>
             <ul>
                 <?php foreach ($applications as $app): ?>
-                    <li><a href="<?= htmlspecialchars($app['link']) ?>"><?= htmlspecialchars($app['name']) ?></a></li>
+                    <li><a href="<?= htmlspecialchars($app['link']) ?>"><?= htmlspecialchars($app['NAME']) ?></a></li>
                 <?php endforeach; ?>
             </ul>
         </nav>
@@ -129,9 +129,9 @@ try {
         <p>请选择您要使用的应用：</p>
         <?php foreach ($applications as $app): ?>
             <div class="app-card">
-                <h3><?= htmlspecialchars($app['name']) ?></h3>
+                <h3><?= htmlspecialchars($app['NAME']) ?></h3>
                 <p><?= htmlspecialchars($app['description']) ?></p>
-                <a href="<?= htmlspecialchars($app['link']) ?>">进入<?= htmlspecialchars($app['name']) ?></a>
+                <a href="<?= htmlspecialchars($app['link']) ?>">进入<?= htmlspecialchars($app['NAME']) ?></a>
             </div>
         <?php endforeach; ?>
     </div>
