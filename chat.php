@@ -43,7 +43,7 @@ $messages = $stmt->fetchAll();
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>Chat Room</title>
+    <title>聊天室</title>
     <style>
         body {
             font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
@@ -58,13 +58,8 @@ $messages = $stmt->fetchAll();
             text-decoration: none;
             margin-right: 15px;
         }
-        .nav a:hover {
-            text-decoration: underline;
-        }
-        .chat-header {
-            font-size: 1.5em;
-            margin-bottom: 20px;
-        }
+        .nav a:hover { text-decoration: underline; }
+        .chat-header { font-size: 1.5em; margin-bottom: 20px; }
         .chat-box {
             background-color: #fff;
             border: 1px solid #ddd;
@@ -74,17 +69,9 @@ $messages = $stmt->fetchAll();
             overflow-y: auto;
             margin-bottom: 20px;
         }
-        .message {
-            margin: 10px 0;
-        }
-        .message strong {
-            color: #007AFF;
-        }
-        .timestamp {
-            color: #888;
-            font-size: 0.8em;
-            margin-left: 10px;
-        }
+        .message { margin: 10px 0; }
+        .message strong { color: #007AFF; }
+        .timestamp { color: #888; font-size: 0.8em; margin-left: 10px; }
         form textarea {
             width: 100%;
             height: 80px;
@@ -102,19 +89,17 @@ $messages = $stmt->fetchAll();
             margin-top: 10px;
             cursor: pointer;
         }
-        form input[type="submit"]:hover {
-            background-color: #005BB5;
-        }
+        form input[type="submit"]:hover { background-color: #005BB5; }
     </style>
 </head>
 <body>
     <div class="nav">
         <a href="app.php">首页</a>
-        <a href="chat.php">聊天</a>
+        <a href="chat.php">聊天室</a>
         <a href="app.php?action=logout">退出登录</a>
     </div>
     <div class="chat-header">
-        Chat Room - Logged in as <?= htmlspecialchars($_SESSION["user"]) ?>
+        聊天室 - 当前用户：<?= htmlspecialchars($_SESSION["user"]) ?>
     </div>
     <div class="chat-box">
         <?php foreach ($messages as $msg): ?>
@@ -126,8 +111,8 @@ $messages = $stmt->fetchAll();
         <?php endforeach; ?>
     </div>
     <form method="post" action="">
-        <textarea name="message" placeholder="Type your message here..." required></textarea>
-        <input type="submit" value="Send">
+        <textarea name="message" placeholder="请输入消息..." required></textarea>
+        <input type="submit" value="发送">
     </form>
 </body>
 </html>

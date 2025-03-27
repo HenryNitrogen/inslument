@@ -46,6 +46,17 @@ if (!isset($_SESSION['user']) || $_SESSION['user'] === '') {
         .navbar a:hover {
             text-decoration: underline;
         }
+        .logout-btn {
+            background-color: #FF3B30;
+            border: none;
+            border-radius: 5px;
+            padding: 0.5rem 1rem;
+            cursor: pointer;
+            font-weight: bold;
+        }
+        .logout-btn:hover {
+            background-color: #E02E20;
+        }
         .container {
             padding: 2rem;
         }
@@ -63,17 +74,6 @@ if (!isset($_SESSION['user']) || $_SESSION['user'] === '') {
         .app-card h3 {
             margin: 0 0 0.5rem 0;
         }
-        .logout-btn {
-            background-color: #FF3B30;
-            border: none;
-            border-radius: 5px;
-            padding: 0.5rem 1rem;
-            cursor: pointer;
-            font-weight: bold;
-        }
-        .logout-btn:hover {
-            background-color: #E02E20;
-        }
     </style>
 </head>
 <body>
@@ -83,9 +83,8 @@ if (!isset($_SESSION['user']) || $_SESSION['user'] === '') {
         </div>
         <nav>
             <ul>
-                <li><a href="app1.php">应用1</a></li>
-                <li><a href="app2.php">应用2</a></li>
                 <li><a href="chat.php">聊天</a></li>
+                <li><a href="calculator.php">计算器</a></li>
             </ul>
         </nav>
         <div>
@@ -97,19 +96,14 @@ if (!isset($_SESSION['user']) || $_SESSION['user'] === '') {
         <h2>欢迎, <?= htmlspecialchars($_SESSION['user']) ?></h2>
         <p>请选择您要使用的应用：</p>
         <div class="app-card">
-            <h3>应用1</h3>
-            <p>这是应用1的简介。</p>
-            <a href="app1.php">进入应用1</a>
-        </div>
-        <div class="app-card">
-            <h3>应用2</h3>
-            <p>这是应用2的简介。</p>
-            <a href="app2.php">进入应用2</a>
-        </div>
-        <div class="app-card">
             <h3>聊天</h3>
             <p>进入聊天页面，与其他用户实时交流。</p>
             <a href="chat.php">进入聊天</a>
+        </div>
+        <div class="app-card">
+            <h3>计算器</h3>
+            <p>使用简单的计算器进行运算。</p>
+            <a href="calculator.php">进入计算器</a>
         </div>
     </div>
 </body>
