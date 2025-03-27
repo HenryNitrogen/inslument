@@ -20,8 +20,11 @@ $options = [
 ];
 try {
     $pdo = new PDO($dsn, $user, $pass, $options);
+    // 获取应用数据，用于动态生成导航栏
+    $stmt = $pdo->query("SELECT * FROM applications ORDER BY id");
+    $applications = $stmt->fetchAll();
 } catch (PDOException $e) {
-    die("Database connection failed: " . $e->getMessage());
+    die("Connection failed: " . $e->getMessage());
 }
 
 // 处理新消息提交
