@@ -7,7 +7,7 @@ if (!isset($_SESSION["user"]) || $_SESSION["user"] === "") {
 
 $currentUser = $_SESSION["user"];
 
-$host    = 'localhost';
+$host = 'localhost';
 $db      = 'lument';
 $user    = 'lument';
 $pass    = 'eCb4hP6xNawZxiNL';
