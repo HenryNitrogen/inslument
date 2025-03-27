@@ -110,7 +110,7 @@ $applications = $stmt->fetchAll();
         <nav>
             <ul>
                 <?php foreach ($applications as $app): ?>
-                <li><a href="<?= htmlspecialchars($app['link']) ?>"><?= htmlspecialchars($app['name']) ?></a></li>
+                <li><a href="<?= htmlspecialchars($app['link'] ?? '', ENT_QUOTES, 'UTF-8') ?>"><?= htmlspecialchars($app['name'] ?? '', ENT_QUOTES, 'UTF-8') ?></a></li>
                 <?php endforeach; ?>
             </ul>
         </nav>
@@ -120,13 +120,13 @@ $applications = $stmt->fetchAll();
     </header>
 
     <div class="container">
-        <h2>欢迎, <?= htmlspecialchars($_SESSION['user']) ?></h2>
+        <h2>欢迎, <?= htmlspecialchars($_SESSION['user'], ENT_QUOTES, 'UTF-8') ?></h2>
         <p>请选择您要使用的应用：</p>
         <?php foreach ($applications as $app): ?>
         <div class="app-card">
-            <h3><?= htmlspecialchars($app['name']) ?></h3>
-            <p><?= htmlspecialchars($app['description']) ?></p>
-            <a href="<?= htmlspecialchars($app['link']) ?>">进入<?= htmlspecialchars($app['name']) ?></a>
+            <h3><?= htmlspecialchars($app['name'] ?? '', ENT_QUOTES, 'UTF-8') ?></h3>
+            <p><?= htmlspecialchars($app['description'] ?? '', ENT_QUOTES, 'UTF-8') ?></p>
+            <a href="<?= htmlspecialchars($app['link'] ?? '', ENT_QUOTES, 'UTF-8') ?>">进入<?= htmlspecialchars($app['name'] ?? '', ENT_QUOTES, 'UTF-8') ?></a>
         </div>
         <?php endforeach; ?>
     </div>
