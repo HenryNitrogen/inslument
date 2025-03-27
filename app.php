@@ -1,6 +1,5 @@
 <?php
 session_start();
-
 if (isset($_GET['action']) && $_GET['action'] === 'logout') {
     session_destroy();
     header("Location: login.php");
@@ -11,30 +10,27 @@ if (!isset($_SESSION['user']) || $_SESSION['user'] === '') {
     exit();
 }
 
-// Database configuration
+// Database connection
 $host = 'localhost';
 $db = 'lument';
 $user = 'lument';
 $pass = 'eCb4hP6xNawZxiNL';
 $charset = 'utf8mb4';
-
 $dsn = "mysql:host=$host;dbname=$db;charset=$charset";
 $options = [
-    PDO::ATTR_ERRMODE            => PDO::ERRMODE_EXCEPTION,
+    PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION,
     PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_ASSOC,
-    PDO::ATTR_EMULATE_PREPARES   => false,
+    PDO::ATTR_EMULATE_PREPARES => false,
 ];
 
 try {
     $pdo = new PDO($dsn, $user, $pass, $options);
+    // Fetch applications for both navigation and cards
+    $stmt = $pdo->query("SELECT * FROM applications ORDER BY id");
+    $applications = $stmt->fetchAll();
 } catch (PDOException $e) {
-    echo 'Database connection failed: ' . $e->getMessage();
-    exit();
+    die("Connection failed: " . $e->getMessage());
 }
-
-// Fetch applications from the database
-$stmt = $pdo->query("SELECT * FROM applications");
-$applications = $stmt->fetchAll();
 ?>
 <!DOCTYPE html>
 <html lang="en">
@@ -79,6 +75,7 @@ $applications = $stmt->fetchAll();
             padding: 0.5rem 1rem;
             cursor: pointer;
             font-weight: bold;
+            color: #fff;
         }
         .logout-btn:hover {
             background-color: #E02E20;
@@ -100,6 +97,14 @@ $applications = $stmt->fetchAll();
         .app-card h3 {
             margin: 0 0 0.5rem 0;
         }
+        .app-card a {
+            color: #007AFF;
+            text-decoration: none;
+            font-weight: 500;
+        }
+        .app-card a:hover {
+            text-decoration: underline;
+        }
     </style>
 </head>
 <body>
@@ -110,7 +115,7 @@ $applications = $stmt->fetchAll();
         <nav>
             <ul>
                 <?php foreach ($applications as $app): ?>
-                <li><a href="<?= htmlspecialchars($app['link'] ?? '', ENT_QUOTES, 'UTF-8') ?>"><?= htmlspecialchars($app['name'] ?? '', ENT_QUOTES, 'UTF-8') ?></a></li>
+                    <li><a href="<?= htmlspecialchars($app['link']) ?>"><?= htmlspecialchars($app['name']) ?></a></li>
                 <?php endforeach; ?>
             </ul>
         </nav>
@@ -120,14 +125,14 @@ $applications = $stmt->fetchAll();
     </header>
 
     <div class="container">
-        <h2>欢迎, <?= htmlspecialchars($_SESSION['user'], ENT_QUOTES, 'UTF-8') ?></h2>
+        <h2>欢迎, <?= htmlspecialchars($_SESSION['user']) ?></h2>
         <p>请选择您要使用的应用：</p>
         <?php foreach ($applications as $app): ?>
-        <div class="app-card">
-            <h3><?= htmlspecialchars($app['name'] ?? '', ENT_QUOTES, 'UTF-8') ?></h3>
-            <p><?= htmlspecialchars($app['description'] ?? '', ENT_QUOTES, 'UTF-8') ?></p>
-            <a href="<?= htmlspecialchars($app['link'] ?? '', ENT_QUOTES, 'UTF-8') ?>">进入<?= htmlspecialchars($app['name'] ?? '', ENT_QUOTES, 'UTF-8') ?></a>
-        </div>
+            <div class="app-card">
+                <h3><?= htmlspecialchars($app['name']) ?></h3>
+                <p><?= htmlspecialchars($app['description']) ?></p>
+                <a href="<?= htmlspecialchars($app['link']) ?>">进入<?= htmlspecialchars($app['name']) ?></a>
+            </div>
         <?php endforeach; ?>
     </div>
 </body>
