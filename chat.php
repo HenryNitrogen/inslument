@@ -26,8 +26,21 @@ try {
     die("Connection failed: " . $e->getMessage());
 }
 
-// 此处假定聊天记录保存在 $messages 中
-$messages = []; // ...existing code to fetch messages...
+// 提交新消息
+if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["message"])) {
+    $user_name = $_SESSION["user"];
+    $message   = trim($_POST["message"]);
+    if ($message !== "") {
+        $stmt = $pdo->prepare("INSERT INTO chat_messages (user_name, message) VALUES (?, ?)");
+        $stmt->execute([$user_name, $message]);
+    }
+    header("Location: chat.php");
+    exit();
+}
+
+// 获取所有消息记录
+$stmt = $pdo->query("SELECT * FROM chat_messages ORDER BY created_at ASC");
+$messages = $stmt->fetchAll();
 ?>
 <!DOCTYPE html>
 <html lang="en">
