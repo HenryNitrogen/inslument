@@ -7,7 +7,7 @@ if (!isset($_SESSION["user"]) || $_SESSION["user"] === "") {
 
 $currentUser = $_SESSION["user"];
 
-$host = 'localhost';
+$host    = 'localhost';
 $db      = 'lument';
 $user    = 'lument';
 $pass    = 'eCb4hP6xNawZxiNL';
@@ -42,23 +42,29 @@ if ($selectedConversation !== "") {
     $stmt->execute([$selectedConversation, $currentUser]);
 }
 
-// 接收搜索关键字
+// 获取搜索关键字
 $search = isset($_GET["search"]) ? trim($_GET["search"]) : "";
 
-// 使用聚合查询获取所有其他用户的未读消息数和最后消息时间
+// 使用聚合查询获取所有其他用户的未读消息数和最后消息时间  
 $query = "SELECT k.user_name, IFNULL(p.unread,0) AS unread, p.last_time
           FROM keys_table k
           LEFT JOIN (
               SELECT 
-                  CASE WHEN sender = :currentUser THEN receiver ELSE sender END AS partner,
-                  COUNT(CASE WHEN receiver = :currentUser AND is_read = 0 THEN 1 END) AS unread,
+                  CASE WHEN sender = :cu1 THEN receiver ELSE sender END AS partner,
+                  COUNT(CASE WHEN receiver = :cu2 AND is_read = 0 THEN 1 END) AS unread,
                   MAX(created_at) AS last_time
               FROM private_messages
-              WHERE sender = :currentUser OR receiver = :currentUser
+              WHERE sender = :cu3 OR receiver = :cu4
               GROUP BY partner
           ) p ON k.user_name = p.partner
-          WHERE k.user_name <> :currentUser";
-$params = [':currentUser' => $currentUser];
+          WHERE k.user_name <> :cu5";
+$params = [
+    ':cu1' => $currentUser,
+    ':cu2' => $currentUser,
+    ':cu3' => $currentUser,
+    ':cu4' => $currentUser,
+    ':cu5' => $currentUser,
+];
 if ($search !== "") {
     $query .= " AND k.user_name LIKE :search";
     $params[':search'] = "%" . $search . "%";
@@ -242,7 +248,7 @@ if ($selectedConversation !== "") {
     </header>
     <div class="container">
         <div class="private-container">
-            <!-- 左侧：用户列表 -->
+            <!-- 左侧用户列表 -->
             <div class="sidebar">
                 <form method="get" action="private.php">
                     <input type="text" name="search" placeholder="搜索用户" value="<?= htmlspecialchars($search) ?>">
@@ -259,7 +265,7 @@ if ($selectedConversation !== "") {
                     </div>
                 <?php endforeach; ?>
             </div>
-            <!-- 右侧：聊天区域 -->
+            <!-- 右侧对话区域 -->
             <div class="chat-area">
                 <?php if ($selectedConversation !== ""): ?>
                     <div class="chat-header">
