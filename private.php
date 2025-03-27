@@ -5,12 +5,13 @@ if (!isset($_SESSION["user"]) || $_SESSION["user"] === "") {
     exit();
 }
 
+$currentUser = $_SESSION["user"];
+
 $host    = 'localhost';
 $db      = 'lument';
 $user    = 'lument';
 $pass    = 'eCb4hP6xNawZxiNL';
 $charset = 'utf8mb4';
-
 $dsn = "mysql:host=$host;dbname=$db;charset=$charset";
 $options = [
     PDO::ATTR_ERRMODE            => PDO::ERRMODE_EXCEPTION,
@@ -23,26 +24,71 @@ try {
     die("Database connection failed: " . $e->getMessage());
 }
 
-// 读取用户列表（排除当前用户）
-$stmt = $pdo->prepare("SELECT user_name FROM keys_table WHERE user_name <> ?");
-$stmt->execute([$_SESSION["user"]]);
+// 如果提交了新消息，且已选定对话对象，则插入消息
+if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["message"]) && isset($_POST["conversation"])) {
+    $conversationPartner = trim($_POST["conversation"]);
+    $messageText = trim($_POST["message"]);
+    if ($conversationPartner !== "" && $messageText !== "") {
+        $stmt = $pdo->prepare("INSERT INTO private_messages (sender, receiver, message) VALUES (?, ?, ?)");
+        $stmt->execute([$currentUser, $conversationPartner, $messageText]);
+    }
+    header("Location: private.php?conversation=" . urlencode($conversationPartner));
+    exit();
+}
+
+// 如果选中了对话对象，则将该对话中发送给当前用户的未读消息标记为已读
+$selectedConversation = isset($_GET["conversation"]) ? trim($_GET["conversation"]) : "";
+if ($selectedConversation !== "") {
+    $stmt = $pdo->prepare("UPDATE private_messages SET is_read = 1 WHERE sender = ? AND receiver = ? AND is_read = 0");
+    $stmt->execute([$selectedConversation, $currentUser]);
+}
+
+// 获取搜索关键字（用于左侧筛选用户）
+$search = isset($_GET["search"]) ? trim($_GET["search"]) : "";
+
+// 获取所有其他用户（根据 keys_table），并附带各自的未读消息数量和最后消息时间
+$queryUsers = "SELECT user_name FROM keys_table WHERE user_name <> ?";
+$params = [$currentUser];
+if ($search !== "") {
+    $queryUsers .= " AND user_name LIKE ?";
+    $params[] = "%" . $search . "%";
+}
+$stmt = $pdo->prepare($queryUsers);
+$stmt->execute($params);
 $users = $stmt->fetchAll();
 
-// 处理发送消息
-$messageSent = "";
-if ($_SERVER["REQUEST_METHOD"] === "POST") {
-    $receiver = trim($_POST["receiver"] ?? "");
-    $message  = trim($_POST["message"] ?? "");
-    if ($receiver && $message) {
-        $stmt = $pdo->prepare("INSERT INTO private_messages (sender, receiver, message) VALUES (?, ?, ?)");
-        if ($stmt->execute([$_SESSION["user"], $receiver, $message])) {
-            $messageSent = "消息已发送给 " . htmlspecialchars($receiver);
-        } else {
-            $messageSent = "发送消息失败";
-        }
-    } else {
-        $messageSent = "请选择接收人和输入消息";
-    }
+// 对每个用户，查询未读数和最近消息时间（若无消息则置为NULL）
+$conversationList = [];
+foreach ($users as $u) {
+    $uname = $u["user_name"];
+    // 未读消息数：当前用户作为接收方，对方作为发送方
+    $stmt = $pdo->prepare("SELECT COUNT(*) as unread, MAX(created_at) as last_time FROM private_messages 
+                           WHERE ((sender = ? AND receiver = ?) OR (sender = ? AND receiver = ?))");
+    $stmt->execute([$uname, $currentUser, $currentUser, $uname]);
+    $data = $stmt->fetch();
+    $conversationList[] = [
+        "user_name"    => $uname,
+        "unread"       => $data["unread"] ? (int)$data["unread"] : 0,
+        "last_time"    => $data["last_time"] // may be null
+    ];
+}
+
+// 排序：按 last_time降序排列，空的排在后面
+usort($conversationList, function($a, $b) {
+    if ($a["last_time"] == $b["last_time"]) return 0;
+    if ($a["last_time"] === null) return 1;
+    if ($b["last_time"] === null) return -1;
+    return strcmp($b["last_time"], $a["last_time"]);
+});
+
+// 如果选中了对话对象，则获取双方所有对话记录
+$conversationHistory = [];
+if ($selectedConversation !== "") {
+    $stmt = $pdo->prepare("SELECT * FROM private_messages 
+                    WHERE ((sender = ? AND receiver = ?) OR (sender = ? AND receiver = ?))
+                    ORDER BY created_at ASC");
+    $stmt->execute([$currentUser, $selectedConversation, $selectedConversation, $currentUser]);
+    $conversationHistory = $stmt->fetchAll();
 }
 ?>
 <!DOCTYPE html>
@@ -71,17 +117,13 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
             padding: 0;
             display: flex;
         }
-        .navbar li {
-            margin-right: 1rem;
-        }
+        .navbar li { margin-right: 1rem; }
         .navbar a {
             color: #fff;
             text-decoration: none;
             font-weight: 500;
         }
-        .navbar a:hover {
-            text-decoration: underline;
-        }
+        .navbar a:hover { text-decoration: underline; }
         .logout-btn {
             background-color: #FF3B30;
             border: none;
@@ -90,51 +132,108 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
             cursor: pointer;
             font-weight: bold;
         }
-        .logout-btn:hover {
-            background-color: #E02E20;
-        }
-        /* 主体内容 */
+        .logout-btn:hover { background-color: #E02E20; }
+        /* 私信主区域 */
         .container {
-            padding: 2rem;
+            padding: 1rem 2rem;
         }
         .private-container {
-            max-width: 500px;
-            margin: 0 auto;
+            display: flex;
             background-color: #fff;
-            padding: 1.5rem;
             border-radius: 8px;
+            overflow: hidden;
             box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+            height: 80vh;
         }
-        .private-container h2 {
-            text-align: center;
+        /* 左侧用户列表 */
+        .sidebar {
+            width: 30%;
+            border-right: 1px solid #ddd;
+            overflow-y: auto;
+            padding: 1rem;
         }
-        .private-container select, 
-        .private-container textarea {
+        .sidebar input[type="text"] {
             width: 100%;
-            padding: 0.75rem;
-            margin: 0.5rem 0;
+            padding: 0.5rem;
+            margin-bottom: 1rem;
             border: 1px solid #ccc;
             border-radius: 5px;
-            font-size: 1rem;
         }
-        .private-container input[type="submit"] {
-            width: 100%;
-            padding: 0.75rem;
+        .user-item {
+            padding: 0.5rem;
+            border-bottom: 1px solid #eee;
+            cursor: pointer;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .user-item:hover { background-color: #f0f0f0; }
+        .unread-badge {
+            background-color: #FF3B30;
+            color: #fff;
+            border-radius: 50%;
+            padding: 0 6px;
+            font-size: 0.8rem;
+        }
+        /* 右侧对话区域 */
+        .chat-area {
+            width: 70%;
+            display: flex;
+            flex-direction: column;
+        }
+        .chat-header {
+            padding: 1rem;
+            border-bottom: 1px solid #ddd;
+            font-size: 1.2rem;
+            font-weight: bold;
+        }
+        .chat-history {
+            flex: 1;
+            padding: 1rem;
+            overflow-y: auto;
+            background-color: #fafafa;
+        }
+        .chat-message {
+            margin-bottom: 1rem;
+            display: flex;
+        }
+        .chat-message.sent { justify-content: flex-end; }
+        .chat-message.received { justify-content: flex-start; }
+        .chat-bubble {
+            max-width: 70%;
+            padding: 0.5rem 1rem;
+            border-radius: 15px;
+            background-color: #d9fdd3;
+            position: relative;
+        }
+        .chat-message.sent .chat-bubble { background-color: #cce5ff; }
+        .chat-timestamp {
+            font-size: 0.75rem;
+            color: #999;
+            margin-top: 5px;
+            text-align: right;
+        }
+        .chat-input {
+            border-top: 1px solid #ddd;
+            padding: 0.5rem;
+        }
+        .chat-input form { display: flex; }
+        .chat-input input[type="text"] {
+            flex: 1;
+            padding: 0.5rem;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+        }
+        .chat-input input[type="submit"] {
             background-color: #007AFF;
             color: #fff;
             border: none;
+            padding: 0 1rem;
+            margin-left: 0.5rem;
             border-radius: 5px;
-            font-size: 1rem;
             cursor: pointer;
         }
-        .private-container input[type="submit"]:hover {
-            background-color: #005BB5;
-        }
-        .message-sent {
-            text-align: center;
-            color: green;
-            margin: 1rem 0;
-        }
+        .chat-input input[type="submit"]:hover { background-color: #005BB5; }
     </style>
 </head>
 <body>
@@ -144,9 +243,8 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
         </div>
         <nav>
             <ul>
-                <li><a href="chat.php">聊天室</a></li>
+                <li><a href="chat.php">私信</a></li>
                 <li><a href="calculator.php">科学计算器</a></li>
-                <li><a href="private.php">私信</a></li>
             </ul>
         </nav>
         <div>
@@ -155,23 +253,57 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
     </header>
     <div class="container">
         <div class="private-container">
-            <h2>私信</h2>
-            <p>当前用户：<?= htmlspecialchars($_SESSION["user"]) ?></p>
-            <?php if ($messageSent): ?>
-                <div class="message-sent"><?= $messageSent ?></div>
-            <?php endif; ?>
-            <form method="post" action="">
-                <label for="receiver">选择接收人：</label>
-                <select name="receiver" id="receiver" required>
-                    <option value="">--请选择用户--</option>
-                    <?php foreach ($users as $user): ?>
-                        <option value="<?= htmlspecialchars($user["user_name"]) ?>"><?= htmlspecialchars($user["user_name"]) ?></option>
-                    <?php endforeach; ?>
-                </select>
-                <label for="message">消息内容：</label>
-                <textarea name="message" id="message" placeholder="请输入消息..." required></textarea>
-                <input type="submit" value="发送私信">
-            </form>
+            <!-- 左侧：用户列表 -->
+            <div class="sidebar">
+                <form method="get" action="private.php">
+                    <input type="text" name="search" placeholder="搜索用户" value="<?= htmlspecialchars($search) ?>">
+                </form>
+                <?php foreach ($conversationList as $conv): ?>
+                    <?php 
+                        $uname = $conv["user_name"];
+                        $unread = $conv["unread"];
+                        // 如果当前对话选中，则标记样式
+                        $active = ($selectedConversation === $uname) ? "style='background-color:#e0e0e0;'" : "";
+                    ?>
+                    <div class="user-item" onclick="window.location.href='private.php?conversation=<?= urlencode($uname) ?><?= $search ? '&search=' . urlencode($search) : '' ?>'" <?= $active ?>>
+                        <span><?= htmlspecialchars($uname) ?></span>
+                        <?php if ($unread > 0): ?>
+                            <span class="unread-badge"><?= $unread ?></span>
+                        <?php endif; ?>
+                    </div>
+                <?php endforeach; ?>
+            </div>
+            <!-- 右侧：聊天区域 -->
+            <div class="chat-area">
+                <?php if ($selectedConversation !== ""): ?>
+                    <div class="chat-header">
+                        私信 - 与 <?= htmlspecialchars($selectedConversation) ?> 对话
+                    </div>
+                    <div class="chat-history">
+                        <?php foreach ($conversationHistory as $msg): ?>
+                            <?php 
+                                $sentByMe = ($msg["sender"] === $currentUser);
+                                $class = $sentByMe ? "sent" : "received";
+                            ?>
+                            <div class="chat-message <?= $class ?>">
+                                <div class="chat-bubble">
+                                    <?= htmlspecialchars($msg["message"]) ?>
+                                    <div class="chat-timestamp"><?= $msg["created_at"] ?></div>
+                                </div>
+                            </div>
+                        <?php endforeach; ?>
+                    </div>
+                    <div class="chat-input">
+                        <form method="post" action="private.php?conversation=<?= urlencode($selectedConversation) ?>">
+                            <input type="hidden" name="conversation" value="<?= htmlspecialchars($selectedConversation) ?>">
+                            <input type="text" name="message" placeholder="请输入消息..." required>
+                            <input type="submit" value="发送">
+                        </form>
+                    </div>
+                <?php else: ?>
+                    <div class="chat-header" style="text-align:center;">请选择左侧用户开始对话</div>
+                <?php endif; ?>
+            </div>
         </div>
     </div>
 </body>
