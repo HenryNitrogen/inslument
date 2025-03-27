@@ -10,21 +10,27 @@ if (!isset($_SESSION['user']) || $_SESSION['user'] === '') {
     exit();
 }
 
-// 建立数据库连接（请根据你的数据库信息修改配置）
-$dsn = "mysql:host=localhost;dbname=yourdbname;charset=utf8mb4";
-$username = "yourusername";
-$password = "yourpassword";
-$options = [PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION];
+// Database configuration
+$host    = 'localhost';
+$db      = 'lument';
+$user    = 'lument';
+$pass    = 'eCb4hP6xNawZxiNL';
+$charset = 'utf8mb4';
+$dsn     = "mysql:host=$host;dbname=$db;charset=$charset";
+$options = [
+    PDO::ATTR_ERRMODE            => PDO::ERRMODE_EXCEPTION,
+    PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_ASSOC,
+];
 
 try {
-    $pdo = new PDO($dsn, $username, $password, $options);
+    $pdo = new PDO($dsn, $user, $pass, $options);
 } catch (PDOException $e) {
-    die("数据库连接失败：" . $e->getMessage());
+    die("Database connection failed: " . $e->getMessage());
 }
 
-// 从数据库获取应用信息
+// Retrieve all applications from database
 $stmt = $pdo->query("SELECT * FROM applications");
-$applications = $stmt->fetchAll(PDO::FETCH_ASSOC);
+$applications = $stmt->fetchAll();
 ?>
 <!DOCTYPE html>
 <html lang="en">
@@ -57,39 +63,47 @@ $applications = $stmt->fetchAll(PDO::FETCH_ASSOC);
         .navbar a {
             color: #fff;
             text-decoration: none;
-            font-weight: 500;
         }
         .logout-btn {
             background-color: #FF3B30;
+            color: #fff;
+            padding: 7px 14px;
             border: none;
             border-radius: 5px;
-            padding: 0.5rem 1rem;
             cursor: pointer;
-            font-weight: bold;
         }
         .container {
-            padding: 2rem;
+            padding: 1rem;
         }
         .app-card {
-            background-color: #fff;
-            padding: 1.5rem;
-            border-radius: 8px;
-            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+            border: 1px solid #ccc;
+            padding: 1rem;
+            border-radius: 5px;
             margin-bottom: 1rem;
-            transition: transform 0.3s;
+            background-color: #fff;
         }
-        .app-card:hover {
-            transform: scale(1.02);
+        .app-card h3 {
+            margin: 0 0 0.5rem 0;
+        }
+        .app-card a {
+            background-color: #007AFF;
+            color: #fff;
+            padding: 0.5rem 1rem;
+            text-decoration: none;
+            border-radius: 5px;
         }
     </style>
 </head>
 <body>
     <header class="navbar">
-        <div class="logo"><a href="app.php">应用选择</a></div>
+        <div class="logo">
+            <a href="app.php">应用选择</a>
+        </div>
         <nav>
             <ul>
-                <li><a href="chat.php">聊天</a></li>
-                <li><a href="calculator.php">计算器</a></li>
+                <?php foreach ($applications as $app): ?>
+                    <li><a href="<?= htmlspecialchars($app['link']) ?>"><?= htmlspecialchars($app['name']) ?></a></li>
+                <?php endforeach; ?>
             </ul>
         </nav>
         <div>
@@ -103,7 +117,7 @@ $applications = $stmt->fetchAll(PDO::FETCH_ASSOC);
             <div class="app-card">
                 <h3><?= htmlspecialchars($app['name']) ?></h3>
                 <p><?= htmlspecialchars($app['description']) ?></p>
-                <a href="<?= htmlspecialchars($app['link']) ?>">进入<?= htmlspecialchars($app['name']) ?></a>
+                <a href="<?= htmlspecialchars($app['link']) ?>">进入应用</a>
             </div>
         <?php endforeach; ?>
     </div>
