@@ -39,8 +39,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['message']) && isset($
     exit();
 }
 
-// 获取所有聊天记录，最新的在上
-$stmt = $pdo->query("SELECT * FROM anonymous_chat ORDER BY created_at DESC");
+// 获取所有聊天记录，按时间升序排列，最新的在下方
+$stmt = $pdo->query("SELECT * FROM anonymous_chat ORDER BY created_at ASC");
 $messages = $stmt->fetchAll();
 ?>
 <!DOCTYPE html>
@@ -225,10 +225,12 @@ $messages = $stmt->fetchAll();
     </div>
     
     <script>
-        // Auto-scroll to the top of chat (since messages are sorted newest first)
+        // Auto-scroll to the bottom of chat within 1 second after page loads
         document.addEventListener('DOMContentLoaded', function() {
-            const chatMessages = document.getElementById('chat-messages');
-            chatMessages.scrollTop = 0;
+            setTimeout(function() {
+                const chatMessages = document.getElementById('chat-messages');
+                chatMessages.scrollTop = chatMessages.scrollHeight;
+            }, 300); // Small delay to ensure all content is rendered
         });
     </script>
 </body>
