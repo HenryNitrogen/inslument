@@ -36,7 +36,7 @@ try {
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>应用选择</title>
+    <title>Application Selection</title>
     <style>
         body {
             margin: 0;
@@ -110,7 +110,7 @@ try {
 <body>
     <header class="navbar">
         <div class="logo">
-            <a href="app.php">应用选择</a>
+            <a href="app.php">Application Selection</a>
         </div>
         <nav>
             <ul>
@@ -120,18 +120,18 @@ try {
             </ul>
         </nav>
         <div>
-            <button class="logout-btn" onclick="location.href='app.php?action=logout'">退出登录</button>
+            <button class="logout-btn" onclick="location.href='app.php?action=logout'">Logout</button>
         </div>
     </header>
 
     <div class="container">
-        <h2>欢迎, <?= htmlspecialchars($_SESSION['user']) ?></h2>
-        <p>请选择您要使用的应用：</p>
+        <h2>Welcome, <?= htmlspecialchars($_SESSION['user']) ?></h2>
+        <p>Please select an application to use:</p>
         <?php foreach ($applications as $app): ?>
             <div class="app-card">
                 <h3><?= htmlspecialchars($app['NAME']) ?></h3>
                 <p><?= htmlspecialchars($app['description']) ?></p>
-                <a href="<?= htmlspecialchars($app['link']) ?>">进入<?= htmlspecialchars($app['NAME']) ?></a>
+                <a href="<?= htmlspecialchars($app['link']) ?>">Open <?= htmlspecialchars($app['NAME']) ?></a>
             </div>
         <?php endforeach; ?>
     </div>

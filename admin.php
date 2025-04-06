@@ -1,10 +1,10 @@
 <?php
 session_start();
 
-// 管理面板访问密码
+// Admin panel access password
 $adminPassword = 'fuckvsa';
 
-// 未登录时显示密码输入界面
+// Show login form if not logged in
 if (!isset($_SESSION['admin']) || $_SESSION['admin'] !== true) {
     if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['password'])) {
         if ($_POST['password'] === $adminPassword) {
@@ -12,22 +12,22 @@ if (!isset($_SESSION['admin']) || $_SESSION['admin'] !== true) {
             header("Location: admin.php");
             exit();
         } else {
-            $error = "密码错误！";
+            $error = "Wrong password!";
         }
     }
     ?>
     <!DOCTYPE html>
-    <html lang="zh">
+    <html lang="en">
     <head>
         <meta charset="UTF-8">
-        <title>管理登录</title>
+        <title>Admin Login</title>
     </head>
     <body>
-        <h2>请输入管理面板密码</h2>
+        <h2>Please enter admin panel password</h2>
         <?php if(isset($error)) echo "<p style='color:red;'>$error</p>"; ?>
         <form method="post">
-            <input type="password" name="password" placeholder="请输入密码" required>
-            <button type="submit">登录</button>
+            <input type="password" name="password" placeholder="Enter password" required>
+            <button type="submit">Login</button>
         </form>
     </body>
     </html>
@@ -35,7 +35,7 @@ if (!isset($_SESSION['admin']) || $_SESSION['admin'] !== true) {
     exit();
 }
 
-// 数据库配置信息
+// Database configuration
 $host    = 'localhost';
 $db      = 'lument';
 $user    = 'lument';
@@ -50,61 +50,61 @@ $options = [
 try {
     $pdo = new PDO($dsn, $user, $pass, $options);
 } catch (PDOException $e) {
-    die("数据库连接失败：" . $e->getMessage());
+    die("Database connection failed: " . $e->getMessage());
 }
 
-// 简单路由逻辑
+// Simple routing logic
 $table = isset($_GET['table']) ? $_GET['table'] : null;
 $action = isset($_GET['action']) ? $_GET['action'] : null;
 
-// 公共函数：获取表的字段信息
+// Common function: Get table column information
 function getTableColumns($pdo, $table) {
     $stmt = $pdo->prepare("DESCRIBE `$table`");
     $stmt->execute();
     return $stmt->fetchAll();
 }
 
-// 列出所有数据表
+// List all tables
 if (!$table) {
     $stmt = $pdo->query("SHOW TABLES");
     $tables = $stmt->fetchAll(PDO::FETCH_NUM);
     ?>
     <!DOCTYPE html>
-    <html lang="zh">
+    <html lang="en">
     <head>
         <meta charset="UTF-8">
-        <title>管理面板 - 数据表列表</title>
+        <title>Admin Panel - Table List</title>
     </head>
     <body>
-        <h2>数据表列表</h2>
+        <h2>Table List</h2>
         <ul>
             <?php foreach ($tables as $t): 
                 $tbl = $t[0]; ?>
                 <li><a href="admin.php?table=<?= htmlspecialchars($tbl) ?>"><?= htmlspecialchars($tbl) ?></a></li>
             <?php endforeach; ?>
         </ul>
-        <p><a href="admin.php?logout=1">退出管理</a></p>
+        <p><a href="admin.php?logout=1">Logout</a></p>
     </body>
     </html>
     <?php
     exit();
 }
 
-// 注: 为简单起见，仅允许由字母、数字和下划线组成的表名
+// Note: For simplicity, only allow table names with letters, numbers and underscores
 if(!preg_match('/^\w+$/', $table)){
-    die("非法的数据表名！");
+    die("Invalid table name!");
 }
 
-// 处理退出登录操作
+// Handle logout
 if(isset($_GET['logout'])) {
     session_destroy();
     header("Location: admin.php");
     exit();
 }
 
-// 根据不同操作执行增删改查
+// Handle CRUD operations
 if ($action === 'delete' && isset($_GET['id'])) {
-    // 删除记录（假设主键字段为 id）
+    // Delete record (assuming primary key field is id)
     $stmt = $pdo->prepare("DELETE FROM `$table` WHERE id = ?");
     $stmt->execute([$_GET['id']]);
     header("Location: admin.php?table=" . htmlspecialchars($table));
@@ -112,15 +112,15 @@ if ($action === 'delete' && isset($_GET['id'])) {
 }
 
 if ($action === 'edit' && isset($_GET['id'])) {
-    // 先获取当前记录
+    // First get current record
     if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-        // 处理更新提交
+        // Process update submission
         $columns = getTableColumns($pdo, $table);
         $fields = [];
         $values = [];
         foreach ($columns as $col) {
             $colName = $col['Field'];
-            if ($colName == 'id') continue; // 不更新主键
+            if ($colName == 'id') continue; // Don't update primary key
             $fields[] = "`$colName` = ?";
             $values[] = isset($_POST[$colName]) ? $_POST[$colName] : null;
         }
@@ -131,23 +131,23 @@ if ($action === 'edit' && isset($_GET['id'])) {
         header("Location: admin.php?table=" . htmlspecialchars($table));
         exit();
     } else {
-        // 显示编辑表单
+        // Show edit form
         $stmt = $pdo->prepare("SELECT * FROM `$table` WHERE id = ?");
         $stmt->execute([$_GET['id']]);
         $record = $stmt->fetch();
         if (!$record) {
-            die("记录不存在！");
+            die("Record not found!");
         }
         $columns = getTableColumns($pdo, $table);
         ?>
         <!DOCTYPE html>
-        <html lang="zh">
+        <html lang="en">
         <head>
             <meta charset="UTF-8">
-            <title>编辑记录 - <?= htmlspecialchars($table) ?></title>
+            <title>Edit Record - <?= htmlspecialchars($table) ?></title>
         </head>
         <body>
-            <h2>编辑记录 (ID: <?= htmlspecialchars($_GET['id']) ?>)</h2>
+            <h2>Edit Record (ID: <?= htmlspecialchars($_GET['id']) ?>)</h2>
             <form method="post">
                 <?php foreach ($columns as $col): 
                     $colName = $col['Field'];
@@ -158,9 +158,9 @@ if ($action === 'edit' && isset($_GET['id'])) {
                         <input type="text" name="<?= htmlspecialchars($colName) ?>" value="<?= htmlspecialchars($record[$colName]) ?>">
                     </div>
                 <?php endforeach; ?>
-                <button type="submit">保存</button>
+                <button type="submit">Save</button>
             </form>
-            <p><a href="admin.php?table=<?= htmlspecialchars($table) ?>">返回</a></p>
+            <p><a href="admin.php?table=<?= htmlspecialchars($table) ?>">Back</a></p>
         </body>
         </html>
         <?php
@@ -171,7 +171,7 @@ if ($action === 'edit' && isset($_GET['id'])) {
 if ($action === 'add') {
     $columns = getTableColumns($pdo, $table);
     if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-        // 插入记录（排除自增主键）
+        // Insert record (exclude auto increment primary key)
         $fields = [];
         $placeholders = [];
         $values = [];
@@ -187,16 +187,16 @@ if ($action === 'add') {
         header("Location: admin.php?table=" . htmlspecialchars($table));
         exit();
     } else {
-        // 显示新增表单
+        // Show add form
         ?>
         <!DOCTYPE html>
-        <html lang="zh">
+        <html lang="en">
         <head>
             <meta charset="UTF-8">
-            <title>新增记录 - <?= htmlspecialchars($table) ?></title>
+            <title>Add Record - <?= htmlspecialchars($table) ?></title>
         </head>
         <body>
-            <h2>新增记录到表：<?= htmlspecialchars($table) ?></h2>
+            <h2>Add Record to Table: <?= htmlspecialchars($table) ?></h2>
             <form method="post">
                 <?php foreach ($columns as $col):
                     if (isset($col['Extra']) && strpos($col['Extra'], 'auto_increment') !== false) continue;
@@ -206,9 +206,9 @@ if ($action === 'add') {
                         <input type="text" name="<?= htmlspecialchars($col['Field']) ?>" placeholder="<?= htmlspecialchars($col['Type']) ?>">
                     </div>
                 <?php endforeach; ?>
-                <button type="submit">新增</button>
+                <button type="submit">Add</button>
             </form>
-            <p><a href="admin.php?table=<?= htmlspecialchars($table) ?>">返回</a></p>
+            <p><a href="admin.php?table=<?= htmlspecialchars($table) ?>">Back</a></p>
         </body>
         </html>
         <?php
@@ -216,31 +216,31 @@ if ($action === 'add') {
     }
 }
 
-// 默认情况下，显示指定数据表的所有记录
+// By default, show all records of the specified table
 $stmt = $pdo->query("SELECT * FROM `$table`");
 $records = $stmt->fetchAll();
 $columns = getTableColumns($pdo, $table);
 ?>
 <!DOCTYPE html>
-<html lang="zh">
+<html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>管理表：<?= htmlspecialchars($table) ?></title>
+    <title>Manage Table: <?= htmlspecialchars($table) ?></title>
     <style>
         table { border-collapse: collapse; width: 100%; }
         th, td { border: 1px solid #ccc; padding: 4px; text-align: left; }
     </style>
 </head>
 <body>
-    <h2>当前管理的数据表：<?= htmlspecialchars($table) ?></h2>
-    <p><a href="admin.php">返回表列表</a> | <a href="admin.php?table=<?= htmlspecialchars($table) ?>&action=add">新增记录</a> | <a href="admin.php?logout=1">退出管理</a></p>
+    <h2>Currently Managing Table: <?= htmlspecialchars($table) ?></h2>
+    <p><a href="admin.php">Return to Table List</a> | <a href="admin.php?table=<?= htmlspecialchars($table) ?>&action=add">Add Record</a> | <a href="admin.php?logout=1">Logout</a></p>
     <table>
         <thead>
             <tr>
                 <?php foreach ($columns as $col): ?>
                     <th><?= htmlspecialchars($col['Field']) ?></th>
                 <?php endforeach; ?>
-                <th>操作</th>
+                <th>Actions</th>
             </tr>
         </thead>
         <tbody>
@@ -253,8 +253,8 @@ $columns = getTableColumns($pdo, $table);
                     <?php endforeach; ?>
                     <td>
                         <?php if(isset($record['id'])): ?>
-                            <a href="admin.php?table=<?= htmlspecialchars($table) ?>&action=edit&id=<?= htmlspecialchars($record['id']) ?>">编辑</a> | 
-                            <a href="admin.php?table=<?= htmlspecialchars($table) ?>&action=delete&id=<?= htmlspecialchars($record['id']) ?>" onclick="return confirm('确定删除吗？')">删除</a>
+                            <a href="admin.php?table=<?= htmlspecialchars($table) ?>&action=edit&id=<?= htmlspecialchars($record['id']) ?>">Edit</a> | 
+                            <a href="admin.php?table=<?= htmlspecialchars($table) ?>&action=delete&id=<?= htmlspecialchars($record['id']) ?>" onclick="return confirm('Are you sure you want to delete?')">Delete</a>
                         <?php else: ?>
                             -
                         <?php endif; ?>
@@ -262,7 +262,7 @@ $columns = getTableColumns($pdo, $table);
                 </tr>
             <?php endforeach; else: ?>
                 <tr>
-                    <td colspan="<?= count($columns)+1 ?>">没有记录</td>
+                    <td colspan="<?= count($columns)+1 ?>">No records found</td>
                 </tr>
             <?php endif; ?>
         </tbody>

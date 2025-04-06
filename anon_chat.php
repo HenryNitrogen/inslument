@@ -1,13 +1,13 @@
 <?php
 session_start();
 
-// 检测是否登录，如果没有登录则重定向到登录页面
+// Check if logged in, redirect to login page if not
 if (!isset($_SESSION['user']) || $_SESSION['user'] === '') {
     header("Location: login.php");
     exit();
 }
 
-// 数据库连接配置
+// Database connection configuration
 $host    = 'localhost';
 $db      = 'lument';
 $user    = 'lument';
@@ -21,14 +21,14 @@ $options = [
 
 try {
     $pdo = new PDO($dsn, $user, $pass, $options);
-    // 获取应用数据，用于动态生成导航栏
+    // Get application data for dynamically generating the navigation bar
     $stmt = $pdo->query("SELECT * FROM applications ORDER BY id");
     $applications = $stmt->fetchAll();
 } catch (PDOException $e) {
     die("Connection failed: " . $e->getMessage());
 }
 
-// 处理AJAX提交的消息
+// Handle AJAX submitted messages
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['message']) && isset($_POST['ajax_submit'])) {
     $message = trim($_POST['message']);
     if ($message !== '') {
@@ -48,7 +48,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['message']) && isset($
     exit();
 }
 
-// 处理常规表单提交（用于不支持JS的浏览器）
+// Handle regular form submission (for browsers without JS support)
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['message']) && isset($_POST['submit_message'])) {
     $message = trim($_POST['message']);
     if ($message !== '') {
@@ -59,15 +59,15 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['message']) && isset($
     exit();
 }
 
-// 获取所有聊天记录，按时间升序排列，最新的在下方
+// Get all chat messages, ordered by time ascending (newest at bottom)
 $stmt = $pdo->query("SELECT * FROM anonymous_chat ORDER BY created_at ASC");
 $messages = $stmt->fetchAll();
 ?>
 <!DOCTYPE html>
-<html lang="zh">
+<html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>匿名聊天</title>
+    <title>Anonymous Chat</title>
     <style>
         body {
             margin: 0;
@@ -207,7 +207,7 @@ $messages = $stmt->fetchAll();
 <body>
     <header class="navbar">
         <div class="logo">
-            <a href="app.php">应用选择</a>
+            <a href="app.php">App Selection</a>
         </div>
         <nav>
             <ul>
@@ -222,21 +222,21 @@ $messages = $stmt->fetchAll();
         </nav>
         
         <div>
-            <button class="logout-btn" onclick="location.href='app.php?action=logout'">退出登录</button>
+            <button class="logout-btn" onclick="location.href='app.php?action=logout'">Logout</button>
         </div>
     </header>
 
     <div class="container">
-        <h2>匿名聊天</h2>
+        <h2>Anonymous Chat</h2>
         <div class="chat-container">
             <div class="chat-header">
-                <h3>公共聊天区</h3>
+                <h3>Public Chat Area</h3>
             </div>
             <div class="chat-messages" id="chat-messages">
                 <?php foreach ($messages as $msg): ?>
                     <div class="message">
                         <div class="message-meta">
-                            <span class="message-user">匿名</span>
+                            <span class="message-user">Anonymous</span>
                             <span class="message-time"><?= htmlspecialchars($msg['created_at']) ?></span>
                         </div>
                         <div class="message-content">
@@ -246,9 +246,9 @@ $messages = $stmt->fetchAll();
                 <?php endforeach; ?>
             </div>
             <form class="chat-input" method="post" action="anon_chat.php" id="chat-form">
-                <textarea name="message" id="message-input" placeholder="请输入消息..." required></textarea>
+                <textarea name="message" id="message-input" placeholder="Enter message..." required></textarea>
                 <input type="hidden" name="submit_message" value="1">
-                <button type="submit">发送</button>
+                <button type="submit">Send</button>
             </form>
         </div>
     </div>
@@ -276,7 +276,7 @@ $messages = $stmt->fetchAll();
                 const messageHtml = `
                     <div class="message new-message">
                         <div class="message-meta">
-                            <span class="message-user">匿名</span>
+                            <span class="message-user">Anonymous</span>
                             <span class="message-time">${timeString}</span>
                         </div>
                         <div class="message-content">

@@ -5,7 +5,7 @@ if (!isset($_SESSION["user"]) || $_SESSION["user"] === "") {
     exit();
 }
 
-// 数据库连接
+// Database connection
 $host    = 'localhost';
 $db      = 'lument';
 $user    = 'lument';
@@ -19,14 +19,14 @@ $options = [
 ];
 try {
     $pdo = new PDO($dsn, $user, $pass, $options);
-    // 获取应用数据
+    // Get application data
     $stmt = $pdo->query("SELECT * FROM applications ORDER BY id");
     $applications = $stmt->fetchAll();
 } catch (PDOException $e) {
     die("Connection failed: " . $e->getMessage());
 }
 
-// 计算器业务逻辑
+// Calculator business logic
 $result = "";
 $expression = "";
 if ($_SERVER["REQUEST_METHOD"] === "POST") {
@@ -34,10 +34,10 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
     if (isset($_POST["clear"])) {
         $expression = "";
     } elseif (isset($_POST["equal"])) {
-        // 将 ^ 替换为 PHP 的幂运算符 **（PHP 7+支持）
+        // Replace ^ with PHP's power operator ** (PHP 7+ supported)
         $expr = str_replace("^", "**", $expression);
         try {
-            // 注意：eval()存在安全风险，此处仅用于演示环境
+            // Note: eval() has security risks, used here only for demonstration
             $result = eval("return {$expr};");
         } catch (Throwable $e) {
             $result = "Error";
@@ -49,7 +49,7 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>科学计算器</title>
+    <title>Scientific Calculator</title>
     <style>
         body {
             margin: 0;
@@ -96,7 +96,7 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
         .container {
             padding: 2rem;
         }
-        /* 以下为计算器样式 */
+        /* Calculator styles below */
         .calc-container { max-width: 400px; margin: 0 auto; background: #fff; padding: 1rem; border-radius: 8px; box-shadow: 0 4px 12px rgba(0,0,0,0.1); }
         .calc-display { width: 100%; padding: 0.5rem; font-size: 1.2rem; border: 1px solid #ccc; border-radius: 5px; margin-bottom: 1rem; }
         .calc-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 0.5rem; }
@@ -105,7 +105,7 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
         .calc-grid button:hover { background-color: #ccc; }
     </style>
     <script>
-        // 使用 JavaScript 控制计算器按钮
+        // Use JavaScript to control calculator buttons
         function appendToDisplay(value) {
             document.getElementById("expression").value += value;
         }
@@ -117,7 +117,7 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
 <body>
     <header class="navbar">
         <div class="logo">
-            <a href="app.php">应用选择</a>
+            <a href="app.php">App Selection</a>
         </div>
         <nav>
             <ul>
@@ -131,46 +131,46 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
             </ul>
         </nav>
         <div>
-            <button class="logout-btn" onclick="location.href='app.php?action=logout'">退出登录</button>
+            <button class="logout-btn" onclick="location.href='app.php?action=logout'">Logout</button>
         </div>
     </header>
     <div class="container">
-        <h2>欢迎, <?= htmlspecialchars($_SESSION["user"]) ?></h2>
+        <h2>Welcome, <?= htmlspecialchars($_SESSION["user"]) ?></h2>
         <div class="calc-container">
             <form method="post" action="">
                 <input type="text" id="expression" name="expression" class="calc-display" value="<?= htmlspecialchars($expression) ?>" readonly>
                 <div class="calc-grid">
-                    <!-- 第一行：函数 -->
+                    <!-- First row: Functions -->
                     <button type="button" onclick="appendToDisplay('sin(')">sin</button>
                     <button type="button" onclick="appendToDisplay('cos(')">cos</button>
                     <button type="button" onclick="appendToDisplay('tan(')">tan</button>
                     <button type="button" onclick="appendToDisplay('log(')">log</button>
-                    <!-- 第二行：数字及操作符 -->
+                    <!-- Second row: Numbers and operators -->
                     <button type="button" onclick="appendToDisplay('7')">7</button>
                     <button type="button" onclick="appendToDisplay('8')">8</button>
                     <button type="button" onclick="appendToDisplay('9')">9</button>
                     <button type="button" class="operator" onclick="appendToDisplay('/')">/</button>
-                    <!-- 第三行 -->
+                    <!-- Third row -->
                     <button type="button" onclick="appendToDisplay('4')">4</button>
                     <button type="button" onclick="appendToDisplay('5')">5</button>
                     <button type="button" onclick="appendToDisplay('6')">6</button>
                     <button type="button" class="operator" onclick="appendToDisplay('*')">*</button>
-                    <!-- 第四行 -->
+                    <!-- Fourth row -->
                     <button type="button" onclick="appendToDisplay('1')">1</button>
                     <button type="button" onclick="appendToDisplay('2')">2</button>
                     <button type="button" onclick="appendToDisplay('3')">3</button>
                     <button type="button" class="operator" onclick="appendToDisplay('-')">-</button>
-                    <!-- 第五行 -->
+                    <!-- Fifth row -->
                     <button type="button" onclick="appendToDisplay('0')">0</button>
                     <button type="button" onclick="appendToDisplay('.')">.</button>
                     <button type="submit" name="equal" class="operator">=</button>
                     <button type="button" class="operator" onclick="appendToDisplay('+')">+</button>
-                    <!-- 清空按钮 -->
-                    <button type="submit" name="clear" style="grid-column: span 4;">清除</button>
+                    <!-- Clear button -->
+                    <button type="submit" name="clear" style="grid-column: span 4;">Clear</button>
                 </div>
             </form>
             <?php if ($result !== ""): ?>
-                <p>结果：<?= htmlspecialchars($result) ?></p>
+                <p>Result: <?= htmlspecialchars($result) ?></p>
             <?php endif; ?>
         </div>
     </div>

@@ -20,14 +20,14 @@ $options = [
 ];
 try {
     $pdo = new PDO($dsn, $user, $pass, $options);
-    // 获取应用数据，用于动态生成导航栏
+    // Get application data for dynamically generating the navigation bar
     $stmt = $pdo->query("SELECT * FROM applications ORDER BY id");
     $applications = $stmt->fetchAll();
 } catch (PDOException $e) {
     die("Connection failed: " . $e->getMessage());
 }
 
-// 处理新消息提交
+// Handle new message submission
 if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["message"]) && isset($_POST["conversation"])) {
     $conversationPartner = trim($_POST["conversation"]);
     $messageText = trim($_POST["message"]);
@@ -45,10 +45,10 @@ if ($selectedConversation !== "") {
     $stmt->execute([$selectedConversation, $currentUser]);
 }
 
-// 获取搜索关键字
+// Get search keyword
 $search = isset($_GET["search"]) ? trim($_GET["search"]) : "";
 
-// 使用聚合查询获取所有其他用户的未读消息数和最后消息时间  
+// Use aggregate query to get unread message count and last message time for all other users  
 $query = "SELECT k.user_name, IFNULL(p.unread,0) AS unread, p.last_time
           FROM keys_table k
           LEFT JOIN (
@@ -78,7 +78,7 @@ $stmt = $pdo->prepare($query);
 $stmt->execute($params);
 $conversationList = $stmt->fetchAll();
 
-// 如果选中了对话对象，则获取双方所有对话记录
+// If a conversation partner is selected, get all messages between both parties
 $conversationHistory = [];
 if ($selectedConversation !== "") {
     $stmt = $pdo->prepare("SELECT * FROM private_messages 
@@ -92,14 +92,14 @@ if ($selectedConversation !== "") {
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>私信</title>
+    <title>Private Messages</title>
     <style>
         body {
             margin: 0;
             background-color: #F5F5F5;
             font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
         }
-        /* 顶部导航栏 */
+        /* Top navigation bar */
         .navbar {
             background-color: #007AFF;
             color: #fff;
@@ -130,7 +130,7 @@ if ($selectedConversation !== "") {
             font-weight: bold;
         }
         .logout-btn:hover { background-color: #E02E20; }
-        /* 私信主区域 */
+        /* Private message main area */
         .container {
             padding: 1rem 2rem;
         }
@@ -142,7 +142,7 @@ if ($selectedConversation !== "") {
             box-shadow: 0 4px 12px rgba(0,0,0,0.1);
             height: 80vh;
         }
-        /* 左侧用户列表 */
+        /* Left user list */
         .sidebar {
             width: 30%;
             border-right: 1px solid #ddd;
@@ -173,7 +173,7 @@ if ($selectedConversation !== "") {
             padding: 0 6px;
             font-size: 0.8rem;
         }
-        /* 右侧对话区域 */
+        /* Right conversation area */
         .chat-area {
             width: 70%;
             display: flex;
@@ -237,7 +237,7 @@ if ($selectedConversation !== "") {
 <body>
     <header class="navbar">
         <div class="logo">
-            <a href="app.php">应用选择</a>
+            <a href="app.php">App Selection</a>
         </div>
         <nav>
             <ul>
@@ -251,15 +251,15 @@ if ($selectedConversation !== "") {
             </ul>
         </nav>
         <div>
-            <button class="logout-btn" onclick="location.href='app.php?action=logout'">退出登录</button>
+            <button class="logout-btn" onclick="location.href='app.php?action=logout'">Logout</button>
         </div>
     </header>
     <div class="container">
         <div class="private-container">
-            <!-- 左侧用户列表 -->
+            <!-- Left user list -->
             <div class="sidebar">
                 <form method="get" action="private.php">
-                    <input type="text" name="search" placeholder="搜索用户" value="<?= htmlspecialchars($search) ?>">
+                    <input type="text" name="search" placeholder="Search users" value="<?= htmlspecialchars($search) ?>">
                 </form>
                 <?php foreach ($conversationList as $conv): 
                     $uname = $conv["user_name"];
@@ -273,11 +273,11 @@ if ($selectedConversation !== "") {
                     </div>
                 <?php endforeach; ?>
             </div>
-            <!-- 右侧对话区域 -->
+            <!-- Right conversation area -->
             <div class="chat-area">
                 <?php if ($selectedConversation !== ""): ?>
                     <div class="chat-header">
-                        私信 - 与 <?= htmlspecialchars($selectedConversation) ?> 对话
+                        Private Messages - Conversation with <?= htmlspecialchars($selectedConversation) ?>
                     </div>
                     <div class="chat-history">
                         <?php foreach ($conversationHistory as $msg): 
@@ -295,12 +295,12 @@ if ($selectedConversation !== "") {
                     <div class="chat-input">
                         <form method="post" action="private.php?conversation=<?= urlencode($selectedConversation) ?>">
                             <input type="hidden" name="conversation" value="<?= htmlspecialchars($selectedConversation) ?>">
-                            <input type="text" name="message" placeholder="请输入消息..." required>
-                            <input type="submit" value="发送">
+                            <input type="text" name="message" placeholder="Enter a message..." required>
+                            <input type="submit" value="Send">
                         </form>
                     </div>
                 <?php else: ?>
-                    <div class="chat-header" style="text-align:center;">请选择左侧用户开始对话</div>
+                    <div class="chat-header" style="text-align:center;">Please select a user from the left to start a conversation</div>
                 <?php endif; ?>
             </div>
         </div>

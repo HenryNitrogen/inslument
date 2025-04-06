@@ -1,7 +1,7 @@
 <?php
 session_start();
 
-// 数据库配置
+// Database configuration
 $host = 'localhost';
 $db   = 'lument';       
 $user = 'lument';         
@@ -20,7 +20,7 @@ try {
     die("Database connection failed: " . $e->getMessage());
 }
 
-// 随机生成6位由小写字母和数字构成的密钥函数
+// Function to generate random 6-character key consisting of lowercase letters and numbers
 function generateRandomKey($length = 6) {
     $chars = '0123456789abcdefghijklmnopqrstuvwxyz';
     $key = '';
@@ -30,7 +30,7 @@ function generateRandomKey($length = 6) {
     return $key;
 }
 
-// 检查生成的 key 是否唯一
+// Check if generated key is unique
 function getUniqueKey(PDO $pdo) {
     do {
         $key = generateRandomKey();
@@ -41,14 +41,14 @@ function getUniqueKey(PDO $pdo) {
     return $key;
 }
 
-// 处理退出登录
+// Handle logout
 if (isset($_GET['action']) && $_GET['action'] === 'logout') {
     session_destroy();
     header("Location: index.php");
     exit();
 }
 
-// 处理登录逻辑，如果未登录则显示登录页面
+// Handle login logic, show login page if not logged in
 if (!isset($_SESSION['admin']) || $_SESSION['admin'] !== true) {
     $error = "";
     if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['login'])) {
@@ -129,19 +129,19 @@ if (!isset($_SESSION['admin']) || $_SESSION['admin'] !== true) {
     exit();
 }
 
-// 如果已登录，处理主界面的逻辑
+// If logged in, handle main interface logic
 $message = "";
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['create_key'])) {
     $name = $_POST['name'] ?? '';
-    // 验证：名字仅允许英文字母
+    // Validation: name allows only English letters
     if (preg_match('/^[A-Za-z]+$/', $name)) {
-        // 检查名字是否已存在
+        // Check if the name already exists
         $stmt = $pdo->prepare("SELECT COUNT(*) FROM keys_table WHERE user_name = ?");
         $stmt->execute([$name]);
         if ($stmt->fetchColumn() > 0) {
             $message = "Name already exists.";
         } else {
-            // 生成唯一密钥，由小写字母和数字组成
+            // Generate unique key consisting of lowercase letters and numbers
             $key = getUniqueKey($pdo);
             $stmt = $pdo->prepare("INSERT INTO keys_table (user_key, user_name) VALUES (?, ?)");
             if ($stmt->execute([$key, $name])) {
@@ -155,7 +155,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['create_key'])) {
     }
 }
 
-// 获取当前所有密钥信息
+// Get all current keys
 $stmt = $pdo->query("SELECT * FROM keys_table");
 $keys = $stmt->fetchAll(PDO::FETCH_ASSOC);
 ?>

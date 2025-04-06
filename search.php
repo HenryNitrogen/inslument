@@ -31,7 +31,7 @@ try {
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>搜索</title>
+    <title>Search</title>
     <style>
         body {
             margin: 0;
@@ -93,7 +93,7 @@ try {
 <body>
     <header class="navbar">
         <div class="logo">
-            <a href="app.php">应用选择</a>
+            <a href="app.php">App Selection</a>
         </div>
         <nav>
             <ul>
@@ -107,12 +107,12 @@ try {
             </ul>
         </nav>
         <div>
-            <button class="logout-btn" onclick="location.href='app.php?action=logout'">退出登录</button>
+            <button class="logout-btn" onclick="location.href='app.php?action=logout'">Logout</button>
         </div>
     </header>
 
     <div class="container">
-        <h2>搜索</h2>
+        <h2>Search</h2>
         <div class="search-container">
             <!-- Google Custom Search Element -->
             <div class="gcse-search"></div>

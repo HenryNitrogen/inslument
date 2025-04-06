@@ -1,13 +1,13 @@
 <?php
 session_start();
 
-// 如果已经登录则跳转至受保护页面（例如 home.php）
+// If already logged in, redirect to protected page (e.g. home.php)
 if (isset($_SESSION['user']) && $_SESSION['user'] !== '') {
     header("Location: app.php");
     exit();
 }
 
-// 数据库连接配置
+// Database connection configuration
 $host    = 'localhost';
 $db      = 'lument';
 $user    = 'lument';

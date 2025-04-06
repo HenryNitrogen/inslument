@@ -195,7 +195,7 @@ if (isset($_GET['action']) && $_GET['action'] === 'clear') {
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>AI 聊天助手</title>
+    <title>AI Chat Assistant</title>
     <style>
         body {
             margin: 0;
@@ -378,7 +378,7 @@ if (isset($_GET['action']) && $_GET['action'] === 'clear') {
 <body>
     <header class="navbar">
         <div class="logo">
-            <a href="app.php">应用选择</a>
+            <a href="app.php">App Selection</a>
         </div>
         <nav>
             <ul>
@@ -392,20 +392,20 @@ if (isset($_GET['action']) && $_GET['action'] === 'clear') {
             </ul>
         </nav>
         <div>
-            <button class="logout-btn" onclick="location.href='app.php?action=logout'">退出登录</button>
+            <button class="logout-btn" onclick="location.href='app.php?action=logout'">Logout</button>
         </div>
     </header>
 
     <div class="container">
-        <h2>AI 聊天助手 (Gemini 2.0)</h2>
+        <h2>AI Chat Assistant (Gemini 2.0)</h2>
         <div class="chat-container">
             <div class="chat-header">
-                <h3>与 AI 助手对话</h3>
+                <h3>Chat with AI Assistant</h3>
             </div>
             <div class="chat-messages" id="chat-messages">
                 <?php if (empty($_SESSION['chat_history'])): ?>
                     <div class="message assistant-message">
-                        您好！我是 Gemini 2.0 AI 助手。有什么我可以帮您的吗？
+                        Hello! I'm the Gemini 2.0 AI assistant. How can I help you today?
                     </div>
                 <?php else: ?>
                     <?php foreach ($_SESSION['chat_history'] as $message): ?>
@@ -421,13 +421,13 @@ if (isset($_GET['action']) && $_GET['action'] === 'clear') {
                 </div>
             </div>
             <form class="chat-input" method="post" id="chat-form">
-                <input type="text" name="message" id="message-input" placeholder="发送消息..." autocomplete="off" required>
+                <input type="text" name="message" id="message-input" placeholder="Send message..." autocomplete="off" required>
                 <input type="hidden" name="submit_message" value="1">
-                <button type="submit" id="submit-btn">发送</button>
+                <button type="submit" id="submit-btn">Send</button>
             </form>
         </div>
         <div class="clear-chat">
-            <a href="chatbot.php?action=clear">清除对话历史</a>
+            <a href="chatbot.php?action=clear">Clear chat history</a>
         </div>
     </div>
 

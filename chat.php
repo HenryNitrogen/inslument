@@ -5,7 +5,7 @@ if (!isset($_SESSION["user"]) || $_SESSION["user"] === "") {
     exit();
 }
 
-// 数据库连接配置
+// Database connection configuration
 $host    = 'localhost';
 $db      = 'lument';
 $user    = 'lument';
@@ -19,14 +19,14 @@ $options = [
 ];
 try {
     $pdo = new PDO($dsn, $user, $pass, $options);
-    // 获取应用数据，用于动态生成导航栏
+    // Get application data for dynamically generating the navigation bar
     $stmt = $pdo->query("SELECT * FROM applications ORDER BY id");
     $applications = $stmt->fetchAll();
 } catch (PDOException $e) {
     die("Connection failed: " . $e->getMessage());
 }
 
-// 处理AJAX提交的消息
+// Handle AJAX submitted messages
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['message']) && isset($_POST['ajax_submit'])) {
     $user_name = $_SESSION["user"];
     $message   = trim($_POST["message"]);
@@ -35,10 +35,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['message']) && isset($
         $stmt = $pdo->prepare("INSERT INTO chat_messages (user_name, message) VALUES (?, ?)");
         $stmt->execute([$user_name, $message]);
         
-        // 获取新消息的时间戳
+        // Get the timestamp of the new message
         $timestamp = $pdo->query("SELECT created_at FROM chat_messages ORDER BY id DESC LIMIT 1")->fetchColumn();
         
-        // 返回成功响应
+        // Return success response
         header('Content-Type: application/json');
         echo json_encode(['success' => true, 'timestamp' => $timestamp, 'user' => $user_name]);
         exit();
@@ -48,7 +48,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['message']) && isset($
     exit();
 }
 
-// 提交新消息（非AJAX）
+// Submit new message (non-AJAX)
 if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["message"]) && isset($_POST["submit_message"])) {
     $user_name = $_SESSION["user"];
     $message   = trim($_POST["message"]);
@@ -61,15 +61,15 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["message"]) && isset($
     exit();
 }
 
-// 获取所有消息记录
+// Get all message records
 $stmt = $pdo->query("SELECT * FROM chat_messages ORDER BY created_at ASC");
 $messages = $stmt->fetchAll();
 ?>
 <!DOCTYPE html>
-<html lang="zh">
+<html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>聊天室</title>
+    <title>Chat Room</title>
     <style>
         body {
             margin: 0;
@@ -220,7 +220,7 @@ $messages = $stmt->fetchAll();
 <body>
     <header class="navbar">
         <div class="logo">
-            <a href="app.php">应用选择</a>
+            <a href="app.php">App Selection</a>
         </div>
         <nav>
             <ul>
@@ -234,15 +234,15 @@ $messages = $stmt->fetchAll();
             </ul>
         </nav>
         <div>
-            <button class="logout-btn" onclick="location.href='app.php?action=logout'">退出登录</button>
+            <button class="logout-btn" onclick="location.href='app.php?action=logout'">Logout</button>
         </div>
     </header>
     
     <div class="container">
-        <h2>聊天室</h2>
+        <h2>Chat Room</h2>
         <div class="chat-container">
             <div class="chat-header">
-                <h3>公共聊天区 - 当前用户：<?= htmlspecialchars($_SESSION["user"]) ?></h3>
+                <h3>Public Chat Area - Current User: <?= htmlspecialchars($_SESSION["user"]) ?></h3>
             </div>
             <div class="chat-messages" id="chat-messages">
                 <?php foreach ($messages as $msg): ?>
@@ -258,9 +258,9 @@ $messages = $stmt->fetchAll();
             </div>
             <div class="chat-input">
                 <form method="post" action="" id="chat-form">
-                    <textarea name="message" placeholder="请输入消息..." required></textarea>
+                    <textarea name="message" placeholder="Enter message..." required></textarea>
                     <input type="hidden" name="ajax_submit" value="1">
-                    <button type="submit">发送</button>
+                    <button type="submit">Send</button>
                 </form>
             </div>
         </div>
@@ -291,7 +291,7 @@ $messages = $stmt->fetchAll();
                 messagesContainer.scrollTop = messagesContainer.scrollHeight;
                 form.reset();
             } else {
-                alert(result.error || '发送失败');
+                alert(result.error || 'Send failed');
             }
         });
     </script>
