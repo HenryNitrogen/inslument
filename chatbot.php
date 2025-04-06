@@ -28,7 +28,7 @@ try {
 }
 
 // API configuration
-$api_url = "https://api.vveai.com/v1/chat/completions";
+$api_url = "https://api.vveai.com";
 $api_key = "sk-ROaI6jhZeFQX3zng9dB99d5aD36941B89913D976E8B6B156";
 $model = "gemini-2.0-flash";
 
