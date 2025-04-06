@@ -29,7 +29,7 @@ try {
 }
 
 // 处理提交的消息
-if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['message'])) {
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['message']) && isset($_POST['submit_message'])) {
     $message = trim($_POST['message']);
     if ($message !== '') {
         $stmt = $pdo->prepare("INSERT INTO anonymous_chat (message) VALUES (?)");
@@ -49,11 +49,15 @@ $messages = $stmt->fetchAll();
     <meta charset="UTF-8">
     <title>匿名聊天</title>
     <style>
-        /* 模仿其他页面的 navbar 样式 */
+        body {
+            margin: 0;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            background-color: #F5F5F5;
+        }
         .navbar {
             background-color: #007AFF;
             color: #fff;
-         
+            padding: 1rem;
             display: flex;
             justify-content: space-between;
             align-items: center;
@@ -75,44 +79,104 @@ $messages = $stmt->fetchAll();
         .navbar a:hover {
             text-decoration: underline;
         }
+        .logout-btn {
+            background-color: #FF3B30;
+            border: none;
+            border-radius: 5px;
+            padding: 0.5rem 1rem;
+            cursor: pointer;
+            font-weight: bold;
+            color: #fff;
+        }
+        .logout-btn:hover {
+            background-color: #E02E20;
+        }
         .container {
             padding: 2rem;
+            max-width: 800px;
+            margin: 0 auto;
         }
-        .chat-box {
-            border: 1px solid #ccc;
+        .chat-container {
+            background-color: #fff;
+            border-radius: 8px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+            height: 70vh;
+        }
+        .chat-header {
+            background-color: #007AFF;
+            color: #fff;
+            padding: 0.8rem 1rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .chat-header h3 {
+            margin: 0;
+        }
+        .chat-messages {
+            flex: 1;
             padding: 1rem;
-            height: 400px;
             overflow-y: auto;
-            background: #f9f9f9;
-            margin-bottom: 1rem;
+            background-color: #f9f9f9;
         }
         .message {
-            margin-bottom: 0.5rem;
-            padding: 0.2rem;
-            background: #fff;
-            border-radius: 4px;
+            margin-bottom: 1rem;
+            padding: 0.75rem;
+            border-radius: 12px;
+            background-color: #f0f0f0;
+            word-wrap: break-word;
         }
-        textarea {
-            width: 100%;
-            height: 100px;
-            padding: 0.5rem;
-            margin-bottom: 0.5rem;
+        .message-meta {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 0.25rem;
+            font-size: 0.9rem;
+        }
+        .message-user {
+            font-weight: bold;
+        }
+        .message-time {
+            color: #888;
+            font-size: 0.8rem;
+        }
+        .message-content {
+            margin-top: 0.5rem;
+        }
+        .chat-input {
+            border-top: 1px solid #ddd;
+            padding: 1rem;
+            display: flex;
+            background-color: #fff;
+        }
+        .chat-input textarea {
+            flex: 1;
+            padding: 0.75rem;
             border: 1px solid #ccc;
-            border-radius: 4px;
-            resize: vertical;
+            border-radius: 12px;
+            margin-right: 0.5rem;
+            font-size: 1rem;
+            resize: none;
+            height: 60px;
+            font-family: inherit;
         }
-        input[type="submit"] {
+        .chat-input button {
             background-color: #007AFF;
             color: #fff;
             border: none;
-            padding: 0.5rem 1rem;
-            border-radius: 4px;
+            border-radius: 12px;
+            padding: 0 1.25rem;
+            font-weight: bold;
             cursor: pointer;
+        }
+        .chat-input button:hover {
+            background-color: #0066CC;
         }
     </style>
 </head>
 <body>
-    <!-- navbar -->
     <header class="navbar">
         <div class="logo">
             <a href="app.php">应用选择</a>
@@ -128,22 +192,44 @@ $messages = $stmt->fetchAll();
                 <?php endforeach; ?>
             </ul>
         </nav>
+        <div>
+            <button class="logout-btn" onclick="location.href='app.php?action=logout'">退出登录</button>
+        </div>
     </header>
 
     <div class="container">
         <h2>匿名聊天</h2>
-        <div class="chat-box">
-            <?php foreach ($messages as $msg): ?>
-                <div class="message">
-                    <strong>匿名</strong>: <?= htmlspecialchars($msg['message']) ?>
-                    <span style="font-size:0.8rem;color:#888;">(<?= $msg['created_at'] ?>)</span>
-                </div>
-            <?php endforeach; ?>
+        <div class="chat-container">
+            <div class="chat-header">
+                <h3>公共聊天区</h3>
+            </div>
+            <div class="chat-messages" id="chat-messages">
+                <?php foreach ($messages as $msg): ?>
+                    <div class="message">
+                        <div class="message-meta">
+                            <span class="message-user">匿名</span>
+                            <span class="message-time"><?= htmlspecialchars($msg['created_at']) ?></span>
+                        </div>
+                        <div class="message-content">
+                            <?= nl2br(htmlspecialchars($msg['message'])) ?>
+                        </div>
+                    </div>
+                <?php endforeach; ?>
+            </div>
+            <form class="chat-input" method="post" action="anon_chat.php">
+                <textarea name="message" placeholder="请输入消息..." required></textarea>
+                <input type="hidden" name="submit_message" value="1">
+                <button type="submit">发送</button>
+            </form>
         </div>
-        <form method="post" action="anon_chat.php">
-            <textarea name="message" placeholder="请输入消息..." required></textarea>
-            <input type="submit" value="发送">
-        </form>
     </div>
+    
+    <script>
+        // Auto-scroll to the top of chat (since messages are sorted newest first)
+        document.addEventListener('DOMContentLoaded', function() {
+            const chatMessages = document.getElementById('chat-messages');
+            chatMessages.scrollTop = 0;
+        });
+    </script>
 </body>
 </html>
