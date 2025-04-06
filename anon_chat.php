@@ -28,7 +28,27 @@ try {
     die("Connection failed: " . $e->getMessage());
 }
 
-// 处理提交的消息
+// 处理AJAX提交的消息
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['message']) && isset($_POST['ajax_submit'])) {
+    $message = trim($_POST['message']);
+    if ($message !== '') {
+        $stmt = $pdo->prepare("INSERT INTO anonymous_chat (message) VALUES (?)");
+        $stmt->execute([$message]);
+        
+        // Get the timestamp of the newly added message
+        $timestamp = $pdo->query("SELECT created_at FROM anonymous_chat ORDER BY id DESC LIMIT 1")->fetchColumn();
+        
+        // Return success response with timestamp
+        header('Content-Type: application/json');
+        echo json_encode(['success' => true, 'timestamp' => $timestamp]);
+        exit();
+    }
+    header('Content-Type: application/json');
+    echo json_encode(['success' => false, 'error' => 'Empty message']);
+    exit();
+}
+
+// 处理常规表单提交（用于不支持JS的浏览器）
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['message']) && isset($_POST['submit_message'])) {
     $message = trim($_POST['message']);
     if ($message !== '') {
@@ -174,6 +194,14 @@ $messages = $stmt->fetchAll();
         .chat-input button:hover {
             background-color: #0066CC;
         }
+        /* Animation for new messages */
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        .new-message {
+            animation: fadeIn 0.3s ease-out;
+        }
     </style>
 </head>
 <body>
@@ -216,8 +244,8 @@ $messages = $stmt->fetchAll();
                     </div>
                 <?php endforeach; ?>
             </div>
-            <form class="chat-input" method="post" action="anon_chat.php">
-                <textarea name="message" placeholder="请输入消息..." required></textarea>
+            <form class="chat-input" method="post" action="anon_chat.php" id="chat-form">
+                <textarea name="message" id="message-input" placeholder="请输入消息..." required></textarea>
                 <input type="hidden" name="submit_message" value="1">
                 <button type="submit">发送</button>
             </form>
@@ -225,13 +253,75 @@ $messages = $stmt->fetchAll();
     </div>
     
     <script>
-        // Auto-scroll to the bottom of chat within 1 second after page loads
+        // Auto-scroll to the bottom of chat immediately when loaded
         document.addEventListener('DOMContentLoaded', function() {
-            setTimeout(function() {
-                const chatMessages = document.getElementById('chat-messages');
-                chatMessages.scrollTop = chatMessages.scrollHeight;
-            }, 300); // Small delay to ensure all content is rendered
+            scrollToBottom();
+            
+            // Set up AJAX form submission for a smoother experience
+            const form = document.getElementById('chat-form');
+            const messageInput = document.getElementById('message-input');
+            const chatMessages = document.getElementById('chat-messages');
+            
+            form.addEventListener('submit', function(e) {
+                e.preventDefault();
+                
+                const message = messageInput.value.trim();
+                if (message === '') return;
+                
+                // Add message to UI immediately (optimistic UI)
+                const now = new Date();
+                const timeString = now.toISOString().replace('T', ' ').substr(0, 19);
+                
+                const messageHtml = `
+                    <div class="message new-message">
+                        <div class="message-meta">
+                            <span class="message-user">匿名</span>
+                            <span class="message-time">${timeString}</span>
+                        </div>
+                        <div class="message-content">
+                            ${message.replace(/\n/g, '<br>')}
+                        </div>
+                    </div>
+                `;
+                
+                chatMessages.insertAdjacentHTML('beforeend', messageHtml);
+                scrollToBottom();
+                
+                // Clear input field
+                messageInput.value = '';
+                
+                // Send data to server via fetch
+                const formData = new FormData();
+                formData.append('message', message);
+                formData.append('ajax_submit', '1');
+                
+                fetch('anon_chat.php', {
+                    method: 'POST',
+                    body: formData
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        // Update the timestamp with the server's timestamp if needed
+                        const lastMessage = chatMessages.lastElementChild;
+                        const timeElement = lastMessage.querySelector('.message-time');
+                        if (timeElement) {
+                            timeElement.textContent = data.timestamp;
+                        }
+                    } else {
+                        console.error('Error sending message:', data.error);
+                    }
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                });
+            });
         });
+        
+        function scrollToBottom() {
+            const chatMessages = document.getElementById('chat-messages');
+            chatMessages.scrollTop = chatMessages.scrollHeight;
+        }
     </script>
 </body>
 </html>
