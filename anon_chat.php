@@ -220,6 +220,7 @@ $messages = $stmt->fetchAll();
                 <?php endforeach; ?>
             </ul>
         </nav>
+        
         <div>
             <button class="logout-btn" onclick="location.href='app.php?action=logout'">退出登录</button>
         </div>

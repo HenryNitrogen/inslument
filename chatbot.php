@@ -37,7 +37,84 @@ if (!isset($_SESSION['chat_history'])) {
     $_SESSION['chat_history'] = [];
 }
 
-// Process if there's a message submission - FIXED to prevent resubmissions on refresh
+// Handle AJAX requests
+if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["message"]) && !empty($_POST["message"]) && isset($_POST["ajax_submit"])) {
+    $user_message = trim($_POST["message"]);
+    
+    // Add user message to history
+    $_SESSION['chat_history'][] = [
+        'role' => 'user',
+        'content' => $user_message
+    ];
+    
+    // Prepare the conversation history for API call
+    $messages = [];
+    foreach ($_SESSION['chat_history'] as $msg) {
+        $messages[] = [
+            'role' => $msg['role'],
+            'content' => $msg['content']
+        ];
+    }
+    
+    // Prepare API request
+    $payload = json_encode([
+        'model' => $model,
+        'messages' => $messages,
+        'max_tokens' => 1000
+    ]);
+    
+    // Send the request to the API
+    $ch = curl_init($api_url . '/v1/chat/completions');
+    curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+    curl_setopt($ch, CURLOPT_POST, true);
+    curl_setopt($ch, CURLOPT_POSTFIELDS, $payload);
+    curl_setopt($ch, CURLOPT_HTTPHEADER, [
+        'Content-Type: application/json',
+        'Authorization: Bearer ' . $api_key
+    ]);
+    
+    $response = curl_exec($ch);
+    $error = curl_error($ch);
+    curl_close($ch);
+    
+    if ($error) {
+        $assistant_response = "Error communicating with the AI service: " . $error;
+        header('Content-Type: application/json');
+        echo json_encode(['success' => false, 'error' => $error]);
+        exit();
+    } else {
+        $response_data = json_decode($response, true);
+        if (isset($response_data['choices'][0]['message']['content'])) {
+            $assistant_response = $response_data['choices'][0]['message']['content'];
+            
+            // Add assistant's response to history
+            $_SESSION['chat_history'][] = [
+                'role' => 'assistant',
+                'content' => $assistant_response
+            ];
+            
+            // Store conversation in database for history
+            try {
+                $stmt = $pdo->prepare("INSERT INTO ai_conversations (user_name, user_message, ai_response) VALUES (?, ?, ?)");
+                $stmt->execute([$_SESSION['user'], $user_message, $assistant_response]);
+            } catch (PDOException $e) {
+                // Table might not exist yet, admin would need to create it
+            }
+            
+            // Return the AI response
+            header('Content-Type: application/json');
+            echo json_encode(['success' => true, 'response' => $assistant_response]);
+            exit();
+        } else {
+            $assistant_response = "Error: Unexpected API response format.";
+            header('Content-Type: application/json');
+            echo json_encode(['success' => false, 'error' => 'Unexpected API response format']);
+            exit();
+        }
+    }
+}
+
+// Process if there's a regular form submission (for non-JavaScript browsers)
 if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["message"]) && !empty($_POST["message"]) && isset($_POST["submit_message"])) {
     $user_message = trim($_POST["message"]);
     
@@ -192,6 +269,8 @@ if (isset($_GET['action']) && $_GET['action'] === 'clear') {
             padding: 1rem;
             overflow-y: auto;
             background-color: #f9f9f9;
+            display: flex;
+            flex-direction: column;
         }
         .message {
             margin-bottom: 1rem;
@@ -208,6 +287,34 @@ if (isset($_GET['action']) && $_GET['action'] === 'clear') {
         .assistant-message {
             background-color: #f0f0f0;
             align-self: flex-start;
+        }
+        .typing-indicator {
+            background-color: #f0f0f0;
+            padding: 0.75rem;
+            border-radius: 12px;
+            align-self: flex-start;
+            margin-bottom: 1rem;
+            display: none;
+        }
+        .typing-indicator span {
+            display: inline-block;
+            width: 8px;
+            height: 8px;
+            background-color: #888;
+            border-radius: 50%;
+            animation: typing 1.4s infinite both;
+            margin: 0 2px;
+        }
+        .typing-indicator span:nth-child(2) {
+            animation-delay: 0.2s;
+        }
+        .typing-indicator span:nth-child(3) {
+            animation-delay: 0.4s;
+        }
+        @keyframes typing {
+            0% { transform: scale(1); opacity: 0.7; }
+            50% { transform: scale(1.2); opacity: 1; }
+            100% { transform: scale(1); opacity: 0.7; }
         }
         .chat-input {
             border-top: 1px solid #ddd;
@@ -259,6 +366,13 @@ if (isset($_GET['action']) && $_GET['action'] === 'clear') {
             padding: 0.2rem 0.4rem;
             border-radius: 3px;
         }
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        .new-message {
+            animation: fadeIn 0.3s ease-out;
+        }
     </style>
 </head>
 <body>
@@ -300,11 +414,16 @@ if (isset($_GET['action']) && $_GET['action'] === 'clear') {
                         </div>
                     <?php endforeach; ?>
                 <?php endif; ?>
+                <div id="typing-indicator" class="typing-indicator">
+                    <span></span>
+                    <span></span>
+                    <span></span>
+                </div>
             </div>
             <form class="chat-input" method="post" id="chat-form">
                 <input type="text" name="message" id="message-input" placeholder="发送消息..." autocomplete="off" required>
                 <input type="hidden" name="submit_message" value="1">
-                <button type="submit">发送</button>
+                <button type="submit" id="submit-btn">发送</button>
             </form>
         </div>
         <div class="clear-chat">
@@ -322,11 +441,24 @@ if (isset($_GET['action']) && $_GET['action'] === 'clear') {
         // Call when page loads
         window.onload = scrollToBottom;
         
-        // Format code blocks in AI responses
+        // Format Markdown in AI responses
+        function formatMarkdown(text) {
+            // Replace ```code``` blocks with <pre><code>code</code></pre>
+            let formattedText = text.replace(/```([\s\S]*?)```/g, '<pre><code>$1</code></pre>');
+            
+            // Replace `inline code` with <code>inline code</code>
+            formattedText = formattedText.replace(/`([^`]+)`/g, '<code>$1</code>');
+            
+            // Replace line breaks with <br>
+            formattedText = formattedText.replace(/\n/g, '<br>');
+            
+            return formattedText;
+        }
+        
+        // Format existing AI responses
         document.addEventListener('DOMContentLoaded', function() {
             const assistantMessages = document.querySelectorAll('.assistant-message');
             assistantMessages.forEach(message => {
-                // Simple markdown-like parsing for code blocks
                 let content = message.innerHTML;
                 
                 // Replace ```code``` blocks with <pre><code>code</code></pre>
@@ -336,6 +468,103 @@ if (isset($_GET['action']) && $_GET['action'] === 'clear') {
                 content = content.replace(/`([^`]+)`/g, '<code>$1</code>');
                 
                 message.innerHTML = content;
+            });
+            
+            // Set up AJAX form submission
+            const form = document.getElementById('chat-form');
+            const messageInput = document.getElementById('message-input');
+            const chatMessages = document.getElementById('chat-messages');
+            const typingIndicator = document.getElementById('typing-indicator');
+            const submitButton = document.getElementById('submit-btn');
+            
+            form.addEventListener('submit', function(e) {
+                e.preventDefault();
+                
+                const message = messageInput.value.trim();
+                if (message === '') return;
+                
+                // Disable input and button while processing
+                messageInput.disabled = true;
+                submitButton.disabled = true;
+                
+                // Add user message to UI immediately
+                const userMessageHtml = `
+                    <div class="message user-message new-message">
+                        ${message.replace(/\n/g, '<br>')}
+                    </div>
+                `;
+                
+                chatMessages.insertAdjacentHTML('beforeend', userMessageHtml);
+                scrollToBottom();
+                
+                // Show typing indicator
+                typingIndicator.style.display = 'block';
+                scrollToBottom();
+                
+                // Clear input field
+                messageInput.value = '';
+                
+                // Send data to server
+                const formData = new FormData();
+                formData.append('message', message);
+                formData.append('ajax_submit', '1');
+                
+                fetch('chatbot.php', {
+                    method: 'POST',
+                    body: formData
+                })
+                .then(response => response.json())
+                .then(data => {
+                    // Hide typing indicator
+                    typingIndicator.style.display = 'none';
+                    
+                    if (data.success) {
+                        // Format and add AI response to chat
+                        const formattedResponse = formatMarkdown(data.response);
+                        const aiMessageHtml = `
+                            <div class="message assistant-message new-message">
+                                ${formattedResponse}
+                            </div>
+                        `;
+                        chatMessages.insertAdjacentHTML('beforeend', aiMessageHtml);
+                    } else {
+                        // Show error message
+                        const errorMessageHtml = `
+                            <div class="message assistant-message new-message">
+                                Sorry, there was an error: ${data.error || 'Unknown error'}
+                            </div>
+                        `;
+                        chatMessages.insertAdjacentHTML('beforeend', errorMessageHtml);
+                    }
+                    
+                    // Re-enable input and button
+                    messageInput.disabled = false;
+                    submitButton.disabled = false;
+                    messageInput.focus();
+                    
+                    // Scroll to bottom again to show AI response
+                    scrollToBottom();
+                })
+                .catch(error => {
+                    // Hide typing indicator
+                    typingIndicator.style.display = 'none';
+                    
+                    // Show error message
+                    const errorMessageHtml = `
+                        <div class="message assistant-message new-message">
+                            Sorry, there was an error communicating with the server. Please try again.
+                        </div>
+                    `;
+                    chatMessages.insertAdjacentHTML('beforeend', errorMessageHtml);
+                    
+                    // Re-enable input and button
+                    messageInput.disabled = false;
+                    submitButton.disabled = false;
+                    messageInput.focus();
+                    
+                    console.error('Error:', error);
+                    scrollToBottom();
+                });
             });
         });
     </script>
