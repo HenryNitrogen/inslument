@@ -105,7 +105,28 @@ try {
         .app-card a:hover {
             text-decoration: underline;
         }
+        /* Google Custom Search styling */
+        .search-container {
+            margin: 0 1rem;
+            flex-grow: 1;
+            max-width: 400px;
+        }
+        .gcse-search {
+            background-color: transparent;
+        }
+        /* Override some Google search styles */
+        .gsc-control-cse {
+            background-color: transparent !important;
+            border: none !important;
+            padding: 0 !important;
+        }
+        .gsc-search-button-v2 {
+            padding: 6px !important;
+            margin-left: 3px !important;
+        }
     </style>
+    <!-- Google Custom Search Engine script -->
+    <script async src="https://cse.google.com/cse.js?cx=46740d73640c342d2"></script>
 </head>
 <body>
     <header class="navbar">
@@ -119,6 +140,10 @@ try {
                 <?php endforeach; ?>
             </ul>
         </nav>
+        <!-- Google Custom Search Element -->
+        <div class="search-container">
+            <div class="gcse-search"></div>
+        </div>
         <div>
             <button class="logout-btn" onclick="location.href='app.php?action=logout'">退出登录</button>
         </div>
