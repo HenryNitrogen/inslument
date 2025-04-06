@@ -37,8 +37,8 @@ if (!isset($_SESSION['chat_history'])) {
     $_SESSION['chat_history'] = [];
 }
 
-// Process if there's a message submission
-if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["message"]) && !empty($_POST["message"])) {
+// Process if there's a message submission - FIXED to prevent resubmissions on refresh
+if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["message"]) && !empty($_POST["message"]) && isset($_POST["submit_message"])) {
     $user_message = trim($_POST["message"]);
     
     // Add user message to history
@@ -101,6 +101,10 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["message"]) && !empty(
     } catch (PDOException $e) {
         // Table might not exist yet, admin would need to create it
     }
+    
+    // Redirect after form processing to prevent resubmission on refresh
+    header("Location: chatbot.php");
+    exit();
 }
 
 // Clear chat history if requested
@@ -299,6 +303,7 @@ if (isset($_GET['action']) && $_GET['action'] === 'clear') {
             </div>
             <form class="chat-input" method="post" id="chat-form">
                 <input type="text" name="message" id="message-input" placeholder="发送消息..." autocomplete="off" required>
+                <input type="hidden" name="submit_message" value="1">
                 <button type="submit">发送</button>
             </form>
         </div>
